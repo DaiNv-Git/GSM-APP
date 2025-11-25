@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call Management System - GSM</title>
+    <meta name="description" content="Hệ thống quản lý cuộc gọi và ghi âm GSM">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --card-hover: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --success-color: #16a085;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-title i {
+            color: var(--primary-color);
+            font-size: 1.75rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: var(--dark-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+            cursor: pointer;
+            text-transform: none;
+            letter-spacing: normal;
+            color: var(--text-primary);
+        }
+
+        .btn {
+            padding: 0.875rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-primary {
+            background: var(--gradient-1);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-success {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-full {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        thead {
+            background: var(--dark-bg);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--card-hover);
+        }
+
+        td {
+            padding: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .status-badge {
+            padding: 0.4rem 0.875rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .status-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .status-failed {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+
+        .status-empty {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning-color);
+            border: 1px solid var(--warning-color);
+        }
+
+        .status-calling {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--info-color);
+            border: 1px solid var(--info-color);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .pagination button {
+            padding: 0.5rem 1rem;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .pagination span {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideInRight 0.4s ease-out;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--secondary-color);
+            color: var(--secondary-color);
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--danger-color);
+            color: var(--danger-color);
+        }
+
+        .loader {
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Port List Styles */
+        .port-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .port-item {
+            background: var(--dark-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .port-item:hover {
+            border-color: var(--primary-color);
+            transform: translateX(4px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.2);
+        }
+
+        .port-item.selected {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .port-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .port-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .port-status {
+            padding: 0.3rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .port-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .port-info-item {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .port-info-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .port-info-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-phone-volume"></i> Call Management System</h1>
+            <p class="subtitle">Hệ thống quản lý cuộc gọi và ghi âm GSM</p>
+        </header>
+
+        <div class="grid">
+            <!-- Make Call Form -->
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-phone"></i>
+                    Thực hiện cuộc gọi
+                </h2>
+
+                <div id="alert-container"></div>
+
+                <form id="callForm">
+                    <div class="form-group">
+                        <label for="comPort">COM Port</label>
+                        <input type="text" id="comPort" placeholder="VD: COM3" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="targetPhone">Target Phone Number</label>
+                        <input type="text" id="targetPhone" placeholder="VD: 0987654321" required>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="recordCall">
+                        <label for="recordCall">
+                            <i class="fas fa-microphone"></i> Bật ghi âm từ MODEM
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" id="callButton">
+                        <span><i class="fas fa-phone-alt"></i> Gọi ngay</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Call Statistics -->
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Thống kê cuộc gọi
+                </h2>
+
+                <div class="form-group">
+                    <label for="filterSimPhone">Lọc theo SIM Phone</label>
+                    <input type="text" id="filterSimPhone" placeholder="Nhập số điện thoại SIM...">
+                </div>
+
+                <button class="btn btn-success btn-full" onclick="loadCallHistory()">
+                    <span><i class="fas fa-sync-alt"></i> Tải lại lịch sử</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Scan COM Ports Section -->
+        <div class="card">
+            <h2 class="card-title">
+                <i class="fas fa-search"></i>
+                Scan COM Ports
+            </h2>
+
+            <button class="btn btn-primary btn-full" onclick="scanPorts()" id="scanButton">
+                <span><i class="fas fa-satellite-dish"></i> Quét COM Ports</span>
+            </button>
+
+            <div id="portListContainer" style="margin-top: 1.5rem; display: none;">
+                <h3 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-secondary);">
+                    <i class="fas fa-list"></i> Danh sách Ports (<span id="portCount">0</span>)
+                </h3>
+
+                <div id="portList" class="port-list">
+                    <!-- Ports will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Call History Table -->
+        <div class="card">
+            <h2 class="card-title">
+                <i class="fas fa-history"></i>
+                Lịch sử cuộc gọi
+            </h2>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>SIM Phone</th>
+                            <th>From Number</th>
+                            <th>COM Port</th>
+                            <th>Device</th>
+                            <th>Trạng thái</th>
+                            <th>Ghi âm</th>
+                            <th>Thời lượng</th>
+                        </tr>
+                    </thead>
+                    <tbody id="callHistoryBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 3rem;">
+                                <div class="loader" style="margin: 0 auto;"></div>
+                                <p style="margin-top: 1rem; color: var(--text-secondary);">Đang tải dữ liệu...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination">
+                <button onclick="changePage(-1)" id="prevBtn">
+                    <i class="fas fa-chevron-left"></i> Trước
+                </button>
+                <span id="pageInfo">Trang 1 / 1</span>
+                <button onclick="changePage(1)" id="nextBtn">
+                    Sau <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+        const pageSize = 20;
+
+        // Load call history on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            loadCallHistory();
+
+            // Form submit handler
+            document.getElementById('callForm').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                await makeCall();
+            });
+
+            // Filter change handler with debounce
+            let filterTimeout;
+            document.getElementById('filterSimPhone').addEventListener('input', function () {
+                clearTimeout(filterTimeout);
+                filterTimeout = setTimeout(() => {
+                    currentPage = 1;
+                    loadCallHistory();
+                }, 500);
+            });
+        });
+
+        // Show alert function
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alert-container');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                <span>${message}</span>
+            `;
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.style.animation = 'fadeOut 0.4s ease-out';
+                setTimeout(() => alertDiv.remove(), 400);
+            }, 5000);
+        }
+
+        // Make call function
+        async function makeCall() {
+            const callButton = document.getElementById('callButton');
+            const originalContent = callButton.innerHTML;
+
+            try {
+                callButton.disabled = true;
+                callButton.innerHTML = '<div class="loader"></div><span>Đang xử lý...</span>';
+
+                const comPort = document.getElementById('comPort').value;
+                const targetPhone = document.getElementById('targetPhone').value;
+                const record = document.getElementById('recordCall').checked;
+
+                // Gọi API MỚI: /api/modem-call/make-call
+                const response = await fetch(`/api/modem-call/make-call?comPort=${encodeURIComponent(comPort)}&targetPhone=${encodeURIComponent(targetPhone)}&record=${record}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert(`✅ ${data.message || 'Cuộc gọi đã được khởi tạo!'}`, 'success');
+
+                    // Reset form
+                    document.getElementById('callForm').reset();
+
+                    // Reload history after 2 seconds
+                    setTimeout(() => loadCallHistory(), 2000);
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error || 'Không thể thực hiện cuộc gọi'}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`❌ Lỗi kết nối: ${error.message}`, 'error');
+            } finally {
+                callButton.disabled = false;
+                callButton.innerHTML = originalContent;
+            }
+        }
+
+        // Scan COM Ports function
+        async function scanPorts() {
+            const scanButton = document.getElementById('scanButton');
+            const originalContent = scanButton.innerHTML;
+
+            try {
+                scanButton.disabled = true;
+                scanButton.innerHTML = '<div class="loader"></div><span>Đang quét...</span>';
+
+                const response = await fetch('/api/modem-call/scan-ports');
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showAlert(`✅ Tìm thấy ${data.totalPorts} COM port(s)!`, 'success');
+                    renderPortList(data.ports);
+                } else {
+                    showAlert(`❌ Lỗi: ${data.error || 'Không thể scan ports'}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`❌ Lỗi kết nối: ${error.message}`, 'error');
+            } finally {
+                scanButton.disabled = false;
+                scanButton.innerHTML = originalContent;
+            }
+        }
+
+        // Render port list
+        function renderPortList(ports) {
+            const portListContainer = document.getElementById('portListContainer');
+            const portList = document.getElementById('portList');
+            const portCount = document.getElementById('portCount');
+
+            if (!ports || ports.length === 0) {
+                portList.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        <i class="fas fa-inbox"></i> Không tìm thấy port nào
+                    </div>
+                `;
+                portListContainer.style.display = 'block';
+                portCount.textContent = '0';
+                return;
+            }
+
+            portCount.textContent = ports.length;
+            portListContainer.style.display = 'block';
+
+            portList.innerHTML = ports.map(port => `
+                <div class="port-item" onclick="selectPort('${port.comPort}', '${port.phoneNumber || ''}')">
+                    <div class="port-header">
+                        <div class="port-name">
+                            <i class="fas fa-usb"></i> ${port.comPort}
+                        </div>
+                        <div class="port-status">${port.status}</div>
+                    </div>
+                    <div class="port-info">
+                        <div class="port-info-item">
+                            <span class="port-info-label"><i class="fas fa-phone"></i> Phone:</span>
+                            <span class="port-info-value">${port.phoneNumber || 'N/A'}</span>
+                        </div>
+                        <div class="port-info-item">
+                            <span class="port-info-label"><i class="fas fa-signal"></i> Signal:</span>
+                            <span class="port-info-value">${port.signalStrength || 'N/A'}</span>
+                        </div>
+                        <div class="port-info-item">
+                            <span class="port-info-label"><i class="fas fa-sim-card"></i> Carrier:</span>
+                            <span class="port-info-value">${port.carrier || 'N/A'}</span>
+                        </div>
+                        <div class="port-info-item">
+                            <span class="port-info-label"><i class="fas fa-fingerprint"></i> IMEI:</span>
+                            <span class="port-info-value">${port.imei || 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Select port and auto-fill form
+        function selectPort(comPort, phoneNumber) {
+            // Fill form fields
+            document.getElementById('comPort').value = comPort;
+
+            // Remove selected class from all items
+            document.querySelectorAll('.port-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            // Add selected class to clicked item
+            event.currentTarget.classList.add('selected');
+
+            // Scroll to form
+            document.getElementById('callForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            showAlert(`✅ Đã chọn ${comPort}. Nhập số điện thoại để gọi!`, 'success');
+        }
+
+
+        // Load call history
+        async function loadCallHistory() {
+            const tbody = document.getElementById('callHistoryBody');
+            const filterSimPhone = document.getElementById('filterSimPhone').value;
+
+            try {
+                let url = `/api/call/history?page=${currentPage}&size=${pageSize}`;
+                if (filterSimPhone) {
+                    url += `&simPhone=${encodeURIComponent(filterSimPhone)}`;
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.ok) {
+                    totalPages = data.totalPages;
+                    updatePagination();
+                    renderCallHistory(data.calls);
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 2rem; color: var(--danger-color);">
+                                <i class="fas fa-exclamation-triangle"></i> Không thể tải dữ liệu
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (error) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--danger-color);">
+                            <i class="fas fa-exclamation-triangle"></i> Lỗi kết nối: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Render call history
+        function renderCallHistory(calls) {
+            const tbody = document.getElementById('callHistoryBody');
+
+            if (!calls || calls.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                            <i class="fas fa-inbox"></i> Chưa có cuộc gọi nào
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = calls.map(call => {
+                const status = getStatusBadge(call.status);
+                const recordFile = call.recordFile
+                    ? `<a href="${call.recordFile}" target="_blank" style="color: var(--info-color);"><i class="fas fa-file-audio"></i> Nghe</a>`
+                    : '<span style="color: var(--text-secondary);">-</span>';
+
+                const duration = calculateDuration(call.callStartTime, call.callEndTime);
+                const createdAt = formatDateTime(call.createdAt);
+
+                return `
+                    <tr>
+                        <td>${createdAt}</td>
+                        <td><strong>${call.simPhone || '-'}</strong></td>
+                        <td>${call.fromNumber || '-'}</td>
+                        <td><code style="background: var(--dark-bg); padding: 0.25rem 0.5rem; border-radius: 4px;">${call.comPort || '-'}</code></td>
+                        <td>${call.deviceName || '-'}</td>
+                        <td>${status}</td>
+                        <td>${recordFile}</td>
+                        <td>${duration}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Get status badge
+        function getStatusBadge(status) {
+            const statusMap = {
+                'SUCCESS': 'success',
+                'FAILED': 'failed',
+                'EMPTY': 'empty',
+                'CALLING': 'calling'
+            };
+
+            const statusClass = statusMap[status] || 'empty';
+            return `<span class="status-badge status-${statusClass}">${status || 'UNKNOWN'}</span>`;
+        }
+
+        // Format date time
+        function formatDateTime(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        // Calculate duration
+        function calculateDuration(startTime, endTime) {
+            if (!startTime || !endTime) return '-';
+
+            const start = new Date(startTime);
+            const end = new Date(endTime);
+            const durationMs = end - start;
+
+            if (durationMs < 0) return '-';
+
+            const seconds = Math.floor(durationMs / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+
+            if (minutes > 0) {
+                return `${minutes}m ${remainingSeconds}s`;
+            }
+            return `${seconds}s`;
+        }
+
+        // Update pagination
+        function updatePagination() {
+            document.getElementById('pageInfo').textContent = `Trang ${currentPage} / ${totalPages || 1}`;
+            document.getElementById('prevBtn').disabled = currentPage <= 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+        }
+
+        // Change page
+        function changePage(delta) {
+            const newPage = currentPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                loadCallHistory();
+            }
+        }
+    </script>
+</body>
+
+</html>

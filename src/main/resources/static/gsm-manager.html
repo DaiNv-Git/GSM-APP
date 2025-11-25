@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GSM Modem Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tahoma&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+            background: #c3d9e8;
+            /* Xanh nhạt thay vì xám */
+            height: 100vh;
+            overflow: hidden;
+            font-size: 11px;
+        }
+
+        /* Classic Menu */
+        .menu-bar {
+            background: #e3f0f8;
+            /* Xanh nhạt */
+            border-bottom: 1px solid #fff;
+            box-shadow: inset 0 -1px 0 #6b9bc4;
+            padding: 0.25rem 0;
+        }
+
+        .menu-items {
+            display: flex;
+            padding: 0 0.5rem;
+        }
+
+        .menu-item {
+            padding: 0.3rem 0.75rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .menu-item:hover {
+            border: 1px outset #fff;
+            background: #d0e7f5;
+        }
+
+        /* Container */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 50px);
+            padding: 0.5rem;
+            gap: 0.5rem;
+        }
+
+        /* Top Panel - Tabs & Content */
+        .top-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #e8f3f9;
+            /* Xanh nhạt */
+            border: 2px outset #fff;
+            overflow: hidden;
+        }
+
+        /* Tab Control */
+        .tab-control {
+            display: flex;
+            padding: 0.25rem 0.25rem 0 0.25rem;
+            gap: 0.2rem;
+            background: #c3d9e8;
+        }
+
+        .tab-button {
+            padding: 0.4rem 1.5rem;
+            background: #c3d9e8;
+            border: 1px solid #6b9bc4;
+            border-bottom: none;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .tab-button.active {
+            background: #e8f3f9;
+            border-top: 1px solid #fff;
+            border-left: 1px solid #fff;
+            border-right: 1px solid #6b9bc4;
+            position: relative;
+            top: 1px;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            background: #e8f3f9;
+            border-top: 1px solid #6b9bc4;
+            overflow: hidden;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Sub Tabs (SMS) */
+        .sub-tab-control {
+            display: flex;
+            padding: 0.5rem;
+            gap: 0.3rem;
+            border-bottom: 1px solid #6b9bc4;
+            background: #c3d9e8;
+        }
+
+        .sub-tab-button {
+            padding: 0.3rem 1rem;
+            background: #c3d9e8;
+            border: 2px outset #fff;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .sub-tab-button.active {
+            border: 2px inset #6b9bc4;
+            background: #a0c5dd;
+        }
+
+        /* Filter Panel */
+        .filter-panel {
+            padding: 0.75rem;
+            background: #e8f3f9;
+            border-bottom: 1px solid #6b9bc4;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-weight: bold;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 0.3rem;
+            border: 2px inset #6b9bc4;
+            background: white;
+            font-family: inherit;
+        }
+
+        .classic-button {
+            padding: 0.4rem 1.2rem;
+            background: #c3d9e8;
+            border: 2px outset #fff;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: inherit;
+        }
+
+        .classic-button:active {
+            border: 2px inset #6b9bc4;
+        }
+
+        .classic-button:hover {
+            background: #d0e7f5;
+        }
+
+        /* Data Grid */
+        .data-grid {
+            flex: 1;
+            overflow: auto;
+            margin: 0.5rem;
+            border: 2px inset #808080;
+            background: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            background: #c3d9e8;
+            border-bottom: 1px solid #6b9bc4;
+        }
+
+        th {
+            padding: 0.4rem;
+            text-align: left;
+            font-weight: bold;
+            border-right: 1px solid #6b9bc4;
+            background: #c3d9e8;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tbody tr:hover {
+            background: #316ac5;
+            color: white;
+        }
+
+        tbody tr.selected {
+            background: #0a246a;
+            color: white;
+        }
+
+        td {
+            padding: 0.4rem;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        /* Action Panel (Call/SMS Form) */
+        .action-panel {
+            padding: 0.75rem;
+            background: #e8f3f9;
+            border-bottom: 1px solid #6b9bc4;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: auto 1fr auto 1fr;
+            gap: 0.5rem 1rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .form-grid label {
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .form-grid input,
+        .form-grid textarea {
+            padding: 0.3rem;
+            border: 2px inset #6b9bc4;
+            background: white;
+            font-family: inherit;
+        }
+
+        .form-grid textarea {
+            grid-column: 2 / 5;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        /* Bottom Panel - SIM List */
+        .bottom-panel {
+            height: 180px;
+            background: #e8f3f9;
+            border: 2px outset #fff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sim-panel-header {
+            padding: 0.5rem;
+            background: #c3d9e8;
+            border-bottom: 1px solid #6b9bc4;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sim-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.5rem;
+            background: white;
+            border: 2px inset #6b9bc4;
+            margin: 0.5rem;
+        }
+
+        .sim-card {
+            padding: 0.5rem;
+            background: #e8f3f9;
+            border: 2px outset #fff;
+            font-size: 10px;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .sim-card input[type="checkbox"] {
+            margin-top: 0.2rem;
+        }
+
+        .sim-card-content {
+            flex: 1;
+        }
+
+        .sim-card-header {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+            color: #0066cc;
+        }
+
+        .sim-card-info {
+            line-height: 1.4;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: #c3d9e8;
+            border-top: 1px solid #fff;
+            padding: 0.25rem 0.5rem;
+            font-size: 10px;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .status-panel {
+            border: 1px inset #6b9bc4;
+            padding: 0.1rem 0.4rem;
+            background: white;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Menu Bar -->
+    <div class="menu-bar">
+        <div class="menu-items">
+            <div class="menu-item">File</div>
+            <div class="menu-item">Tools</div>
+            <div class="menu-item">Settings</div>
+            <div class="menu-item">Help</div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Top Panel -->
+        <div class="top-panel">
+            <!-- Main Tabs -->
+            <div class="tab-control">
+                <div class="tab-button active" onclick="switchMainTab('sms')">SMS Message</div>
+                <div class="tab-button" onclick="switchMainTab('call')">Phone Call</div>
+            </div>
+
+            <!-- SMS Tab -->
+            <div id="smsTab" class="tab-content active">
+                <!-- Sub Tabs -->
+                <div class="sub-tab-control">
+                    <div class="sub-tab-button active" onclick="switchSmsTab('sent')">SENT</div>
+                    <div class="sub-tab-button" onclick="switchSmsTab('outbox')">OUTBOX</div>
+                    <div class="sub-tab-button" onclick="switchSmsTab('inbox')">INBOX</div>
+                </div>
+
+                <!-- Filter Panel -->
+                <div class="filter-panel">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Status:</label>
+                            <select id="smsStatusFilter" onchange="loadSmsHistory()">
+                                <option value="">All</option>
+                                <option value="SUCCESS">Success</option>
+                                <option value="FAILED">Failed</option>
+                                <option value="PENDING">Pending</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Phone:</label>
+                            <input type="text" id="smsPhoneFilter" placeholder="Filter by phone">
+                        </div>
+                        <div class="filter-group">
+                            <label>Date:</label>
+                            <input type="date" id="smsDateFilter">
+                        </div>
+                        <button class="classic-button" onclick="loadSmsHistory()">Search</button>
+                        <button class="classic-button" onclick="clearSmsFilters()">Clear</button>
+                    </div>
+                </div>
+
+                <!-- Send SMS Form -->
+                <div class="action-panel">
+                    <!-- Status Display -->
+                    <div id="smsStatusDisplay"
+                        style="display: none; padding: 0.5rem; margin-bottom: 0.75rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+                        <strong>Status:</strong> <span id="smsStatusText">Ready</span>
+                    </div>
+
+                    <div class="form-grid" style="grid-template-columns: auto 1fr;">
+                        <!-- Hidden COM Port -->
+                        <input type="hidden" id="smsComPort">
+
+                        <label>Target Phone:</label>
+                        <input type="text" id="smsTargetPhone" placeholder="0987654321">
+
+                        <label>Message:</label>
+                        <textarea id="smsMessage" rows="2" placeholder="Type your message..."
+                            style="grid-column: 2;"></textarea>
+                    </div>
+                    <div class="button-row">
+                        <button class="classic-button" onclick="sendSms()">Send SMS</button>
+                        <button class="classic-button" onclick="clearSmsForm()">Clear</button>
+                    </div>
+                </div>
+
+                <!-- SMS Data Grid -->
+                <div class="data-grid">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 120px;">Time</th>
+                                <th style="width: 100px;">Phone</th>
+                                <th style="width: 80px;">COM Port</th>
+                                <th>Message</th>
+                                <th style="width: 80px;">Status</th>
+                                <th style="width: 100px;">Type</th>
+                            </tr>
+                        </thead>
+                        <tbody id="smsDataGrid">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 2rem;">No data</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Call Tab -->
+            <div id="callTab" class="tab-content">
+                <!-- Filter Panel -->
+                <div class="filter-panel">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Status:</label>
+                            <select id="callStatusFilter" onchange="loadCallHistory()">
+                                <option value="">All</option>
+                                <option value="SUCCESS">Success</option>
+                                <option value="FAILED">Failed</option>
+                                <option value="CALLING">Calling</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Phone:</label>
+                            <input type="text" id="callPhoneFilter" placeholder="Filter by phone">
+                        </div>
+                        <div class="filter-group">
+                            <label>Date:</label>
+                            <input type="date" id="callDateFilter">
+                        </div>
+                        <button class="classic-button" onclick="loadCallHistory()">Search</button>
+                        <button class="classic-button" onclick="clearCallFilters()">Clear</button>
+                    </div>
+                </div>
+
+                <!-- Make Call Form -->
+                <div class="action-panel">
+                    <!-- Status Display -->
+                    <div id="callStatusDisplay"
+                        style="display: none; padding: 0.5rem; margin-bottom: 0.75rem; background: #d1ecf1; border: 1px solid #0dcaf0; border-radius: 4px;">
+                        <strong>Status:</strong> <span id="callStatusText">Ready</span>
+                    </div>
+
+                    <div class="form-grid" style="grid-template-columns: auto 1fr;">
+                        <!-- Hidden COM Port -->
+                        <input type="hidden" id="callComPort">
+
+                        <label>Target Phone:</label>
+                        <input type="text" id="callTargetPhone" placeholder="0987654321">
+
+                        <label></label>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="recordCall">
+                            <label for="recordCall" style="margin: 0;">Enable Recording</label>
+                        </div>
+                    </div>
+                    <div class="button-row">
+                        <button class="classic-button" onclick="makeCall()">Make Call</button>
+                        <button class="classic-button" onclick="clearCallForm()">Clear</button>
+                    </div>
+                </div>
+
+                <!-- Call Data Grid -->
+                <div class="data-grid">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 120px;">Time</th>
+                                <th style="width: 100px;">SIM Phone</th>
+                                <th style="width: 100px;">Target</th>
+                                <th style="width: 80px;">COM Port</th>
+                                <th style="width: 100px;">Device</th>
+                                <th style="width: 80px;">Status</th>
+                                <th style="width: 60px;">Record</th>
+                                <th style="width: 60px;">Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody id="callDataGrid">
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 2rem;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Panel - SIM List -->
+        <div class="bottom-panel">
+            <div class="sim-panel-header">
+                <span>Available SIM Cards</span>
+                <button class="classic-button" onclick="scanPorts()" style="padding: 0.3rem 0.8rem;">
+                    Scan Ports
+                </button>
+            </div>
+            <div class="sim-list" id="simList">
+                <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #808080;">
+                    Click "Scan Ports" to detect SIM cards
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-panel" id="statusText">Ready</div>
+        <div class="status-panel" id="simCount">SIMs: 0</div>
+        <div class="status-panel" id="selectedSim">Selected: None</div>
+    </div>
+
+    <script>
+        let selectedSim = null;
+        let currentMainTab = 'sms';
+        let currentSmsTab = 'sent';
+
+        // Switch main tab
+        function switchMainTab(tab) {
+            currentMainTab = tab;
+
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tab + 'Tab').classList.add('active');
+
+            if (tab === 'call') loadCallHistory();
+            else loadSmsHistory();
+        }
+
+        // Switch SMS sub-tab
+        function switchSmsTab(tab) {
+            currentSmsTab = tab;
+
+            document.querySelectorAll('.sub-tab-button').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            loadSmsHistory();
+        }
+
+        // Scan ports
+        async function scanPorts() {
+            document.getElementById('statusText').textContent = 'Scanning ports...';
+            document.getElementById('simList').innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem;">Scanning...</div>';
+
+            try {
+                const response = await fetch('/api/modem-call/scan-ports');
+                const data = await response.json();
+
+                if (data.success && data.ports.length > 0) {
+                    renderSims(data.ports);
+                    document.getElementById('simCount').textContent = `SIMs: ${data.ports.length}`;
+                    document.getElementById('statusText').textContent = `Found ${data.ports.length} SIM(s)`;
+                } else {
+                    document.getElementById('simList').innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #808080;">No SIM cards found</div>';
+                    document.getElementById('statusText').textContent = 'No SIMs found';
+                }
+            } catch (error) {
+                document.getElementById('statusText').textContent = 'Error scanning';
+                document.getElementById('simList').innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: red;">Error</div>';
+            }
+        }
+
+        // Render SIMs với checkbox
+        function renderSims(sims) {
+            document.getElementById('simList').innerHTML = sims.map((sim, index) => `
+                <div class="sim-card">
+                    <input type="checkbox" id="sim_${index}" onchange="selectSim('${sim.comPort}', this)">
+                    <div class="sim-card-content">
+                        <div class="sim-card-header">${sim.comPort}</div>
+                        <div class="sim-card-info">
+                            📞 ${sim.phoneNumber || 'N/A'}<br>
+                            📡 ${sim.carrier || 'N/A'}<br>
+                            📶 ${sim.signalStrength || 'N/A'}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Select SIM via checkbox
+        function selectSim(comPort, checkbox) {
+            if (checkbox.checked) {
+                // Uncheck all other checkboxes
+                document.querySelectorAll('#simList input[type="checkbox"]').forEach(cb => {
+                    if (cb !== checkbox) cb.checked = false;
+                });
+
+                selectedSim = comPort;
+                document.getElementById('smsComPort').value = comPort;
+                document.getElementById('callComPort').value = comPort;
+                document.getElementById('selectedSim').textContent = `Selected: ${comPort}`;
+            } else {
+                selectedSim = null;
+                document.getElementById('smsComPort').value = '';
+                document.getElementById('callComPort').value = '';
+                document.getElementById('selectedSim').textContent = 'Selected: None';
+            }
+        }
+
+        // Send SMS với status tracking
+        async function sendSms() {
+            const comPort = document.getElementById('smsComPort').value;
+            const targetPhone = document.getElementById('smsTargetPhone').value;
+            const message = document.getElementById('smsMessage').value;
+
+            if (!comPort) {
+                alert('Please select a SIM card first (tick checkbox)');
+                return;
+            }
+
+            if (!targetPhone || !message) {
+                alert('Please enter phone number and message');
+                return;
+            }
+
+            // Show status display
+            const statusDisplay = document.getElementById('smsStatusDisplay');
+            const statusText = document.getElementById('smsStatusText');
+            statusDisplay.style.display = 'block';
+            statusDisplay.style.background = '#d1ecf1';
+            statusDisplay.style.borderColor = '#0dcaf0';
+
+            statusText.textContent = '⏳ Connecting to modem...';
+            document.getElementById('statusText').textContent = 'Sending SMS...';
+
+            try {
+                statusText.textContent = '📡 Sending SMS...';
+
+                const response = await fetch(`/api/modem-call/send-sms?comPort=${comPort}&targetPhone=${targetPhone}&message=${encodeURIComponent(message)}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    statusDisplay.style.background = '#d4edda';
+                    statusDisplay.style.borderColor = '#28a745';
+                    statusText.textContent = '✅ SMS sent successfully!';
+                    document.getElementById('statusText').textContent = 'SMS sent';
+
+                    clearSmsForm();
+                    setTimeout(() => {
+                        statusDisplay.style.display = 'none';
+                        loadSmsHistory();
+                    }, 3000);
+                } else {
+                    statusDisplay.style.background = '#f8d7da';
+                    statusDisplay.style.borderColor = '#dc3545';
+                    statusText.textContent = '❌ Failed: ' + (data.error || 'Unknown error');
+                    document.getElementById('statusText').textContent = 'SMS failed';
+                }
+            } catch (error) {
+                statusDisplay.style.background = '#f8d7da';
+                statusDisplay.style.borderColor = '#dc3545';
+                statusText.textContent = '❌ Error: ' + error.message;
+                document.getElementById('statusText').textContent = 'Error';
+            }
+        }
+
+        // Make Call với status tracking
+        async function makeCall() {
+            const comPort = document.getElementById('callComPort').value;
+            const targetPhone = document.getElementById('callTargetPhone').value;
+            const record = document.getElementById('recordCall').checked;
+
+            if (!comPort) {
+                alert('Please select a SIM card first (tick checkbox)');
+                return;
+            }
+
+            if (!targetPhone) {
+                alert('Please enter phone number');
+                return;
+            }
+
+            // Show status display
+            const statusDisplay = document.getElementById('callStatusDisplay');
+            const statusText = document.getElementById('callStatusText');
+            statusDisplay.style.display = 'block';
+            statusDisplay.style.background = '#d1ecf1';
+            statusDisplay.style.borderColor = '#0dcaf0';
+
+            statusText.textContent = '⏳ Initializing call...';
+            document.getElementById('statusText').textContent = 'Making call...';
+
+            try {
+                statusText.textContent = '📞 Dialing ' + targetPhone + '...';
+
+                const response = await fetch(`/api/modem-call/make-call?comPort=${comPort}&targetPhone=${targetPhone}&record=${record}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    statusDisplay.style.background = '#d4edda';
+                    statusDisplay.style.borderColor = '#28a745';
+                    statusText.textContent = '✅ Call initiated! OrderID: ' + data.orderId.substring(0, 8) + '...';
+                    document.getElementById('statusText').textContent = 'Call in progress';
+
+                    clearCallForm();
+
+                    // Auto refresh history after call
+                    setTimeout(() => {
+                        statusDisplay.style.display = 'none';
+                        loadCallHistory();
+                    }, 5000);
+                } else {
+                    statusDisplay.style.background = '#f8d7da';
+                    statusDisplay.style.borderColor = '#dc3545';
+                    statusText.textContent = '❌ Failed: ' + (data.error || 'Unknown error');
+                    document.getElementById('statusText').textContent = 'Call failed';
+                }
+            } catch (error) {
+                statusDisplay.style.background = '#f8d7da';
+                statusDisplay.style.borderColor = '#dc3545';
+                statusText.textContent = '❌ Error: ' + error.message;
+                document.getElementById('statusText').textContent = 'Error';
+            }
+        }
+
+        // Load SMS History
+        async function loadSmsHistory() {
+            const grid = document.getElementById('smsDataGrid');
+            grid.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 1rem;">Loading...</td></tr>';
+
+            // For now, show placeholder (would integrate with real SMS API)
+            setTimeout(() => {
+                grid.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #808080;">No SMS records (Feature coming soon)</td></tr>';
+            }, 500);
+        }
+
+        // Load Call History
+        async function loadCallHistory() {
+            const grid = document.getElementById('callDataGrid');
+            grid.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 1rem;">Loading...</td></tr>';
+
+            try {
+                const response = await fetch('/api/modem-call/call-history?page=1&size=100');
+                const data = await response.json();
+
+                if (data.success && data.calls && data.calls.length > 0) {
+                    grid.innerHTML = data.calls.map(call => `
+                        <tr>
+                            <td>${formatTime(call.createdAt)}</td>
+                            <td>${call.simPhone || '-'}</td>
+                            <td>${call.fromNumber || '-'}</td>
+                            <td>${call.comPort || '-'}</td>
+                            <td>${call.deviceName || '-'}</td>
+                            <td>${call.status || '-'}</td>
+                            <td>${call.recordFile ? 'Yes' : 'No'}</td>
+                            <td>${calculateDuration(call.callStartTime, call.callEndTime)}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    grid.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #808080;">No call records</td></tr>';
+                }
+            } catch (error) {
+                grid.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: red;">Error loading data</td></tr>';
+            }
+        }
+
+        // Clear forms
+        function clearSmsForm() {
+            document.getElementById('smsTargetPhone').value = '';
+            document.getElementById('smsMessage').value = '';
+        }
+
+        function clearCallForm() {
+            document.getElementById('callTargetPhone').value = '';
+            document.getElementById('recordCall').checked = false;
+        }
+
+        function clearSmsFilters() {
+            document.getElementById('smsStatusFilter').value = '';
+            document.getElementById('smsPhoneFilter').value = '';
+            document.getElementById('smsDateFilter').value = '';
+            loadSmsHistory();
+        }
+
+        function clearCallFilters() {
+            document.getElementById('callStatusFilter').value = '';
+            document.getElementById('callPhoneFilter').value = '';
+            document.getElementById('callDateFilter').value = '';
+            loadCallHistory();
+        }
+
+        // Utilities
+        function formatTime(dateString) {
+            if (!dateString) return '-';
+            return new Date(dateString).toLocaleString('vi-VN');
+        }
+
+        function calculateDuration(start, end) {
+            if (!start || !end) return '-';
+            const ms = new Date(end) - new Date(start);
+            const sec = Math.floor(ms / 1000);
+            return sec > 60 ? `${Math.floor(sec / 60)}m ${sec % 60}s` : `${sec}s`;
+        }
+
+        // Load on start
+        loadCallHistory();
+
+        // Confirm before close window
+        window.addEventListener('beforeunload', function (e) {
+            e.preventDefault();
+            e.returnValue = 'Are you sure you want to close GSM Manager? This will shutdown the application.';
+            return e.returnValue;
+        });
+
+        // Handle window close - shutdown backend
+        window.addEventListener('unload', async function () {
+            try {
+                // Call shutdown API
+                await fetch('/api/modem-call/shutdown', {
+                    method: 'POST',
+                    keepalive: true  // Important for requests during page unload
+                });
+            } catch (error) {
+                console.log('Shutdown signal sent');
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,87 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://admin:daidev223@72.60.41.168:27017/JapanSim?authSource=admin
+      connection-pool:
+        max-size: 50
+        max-wait-time: 5000
+
+services:
+  sim-smart-gsm:
+    image: sim-smart-gsm:latest
+    container_name: sim-smart-gsm
+    environment:
+      VPS_ID: 72.60.41.168
+      DEVICE: my-gsm-node-01
+      SCAN_INTERVAL_MS: 60000
+      SPRING_DATA_MONGODB_URI: mongodb://admin:daidev223@72.60.41.168:27017/JapanSim?authSource=admin
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+    restart: always
+    ports:
+      - "8080:8080"
+
+gsm:
+  detect:
+    auto-reply: true
+    reply-message: "VERIFY_OK"
+
+
+  api:
+    base-url: https://be-user-sms-global.smsglobalhub.com/
+
+  order-api:
+    base-url: https://be-user-sms-global.smsglobalhub.com/
+
+  test-mode: true
+  loop-test-sms: false
+  loop-test-sms-interval: 30
+  test-call-mode: true
+
+  record:
+    public-url: https://be-user-sms-global.smsglobalhub.com/uploads/records/
+
+    # ✅ Upload về GSM backend (cùng server với callback)
+    upload-url: https://be-user-sms-global.smsglobalhub.com/api/upload/record
+
+    callback-url: https://be-user-sms-global.smsglobalhub.com/api/gsm/call/receive
+    upload-dir: /var/www/html/recordings
+
+  recording:
+    local-temp: C:/temp/recordings
+
+# Modem Recording Configuration (for ModemCallController)
+recording:
+  save:
+    path: recordings  # Folder để lưu WAV files từ modem
+
+  ssh:
+    host: 72.60.41.168
+    port: 22
+    user: root
+    password: jKvsfhgcGSvw198@
+
+ngrok:
+  authtoken: 2MyHVayjeJn15C5COX0cKF08l2N_3b37j2Uj7scvm5i1fdNAU
+
+cleanup:
+  log-dirs:
+    - /var/log/simsmart-gsm
+    - /opt/apps/simsmart-gsm/logs
+  temp-dirs:
+    - /opt/apps/simsmart-gsm/tmp
+    - /tmp/simsmart
+  truncate-active-logs: true
+  active-log-globs:
+    - "*.log"
+  rotated-log-exts:
+    - ".gz"
+    - ".zip"
+    - ".1"
+    - ".2"
+    - ".3"
+    - ".old"
+    - ".bak"
+  dump-exts:
+    - ".hprof"
+    - ".heapsnapshot"
