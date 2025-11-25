@@ -43,25 +43,27 @@ public class ModemCallController {
 
     /**
      * Thực hiện cuộc gọi với ghi âm từ MODEM
-     * INPUT ĐƠN GIẢN: chỉ comPort, targetPhone, record
+     * INPUT ĐƠN GIẢN: chỉ comPort, targetPhone, record, maxDurationSeconds
      */
     @PostMapping("/make-call")
-    @Operation(summary = "Thực hiện cuộc gọi từ MODEM", description = "Gọi điện qua modem. File ghi âm lưu ở ổ C local.")
+    @Operation(summary = "Thực hiện cuộc gọi từ MODEM", description = "Gọi điện qua modem với tùy chọn ghi âm và thời gian tối đa")
     public ResponseEntity<?> makeModemCall(
             @RequestParam String comPort,
             @RequestParam String targetPhone,
-            @RequestParam(defaultValue = "false") boolean record) {
+            @RequestParam(defaultValue = "false") boolean record,
+            @RequestParam(defaultValue = "0") int maxDurationSeconds) {
         try {
             // Generate unique order ID
             String orderId = UUID.randomUUID().toString();
 
-            // Gọi điện qua ModemCallService (HOÀN TOÀN MỚI, không dùng ComManager)
+            // Gọi điện qua ModemCallService với maxDurationSeconds
             String recordFileName = modemCallService.makeCall(
                     comPort,
                     null, // simPhone - không cần
                     targetPhone,
                     record,
-                    orderId);
+                    orderId,
+                    maxDurationSeconds);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -70,10 +72,11 @@ public class ModemCallController {
             response.put("comPort", comPort);
             response.put("targetPhone", targetPhone);
             response.put("recording", record);
+            response.put("maxDurationSeconds", maxDurationSeconds);
             response.put("recordFileName", recordFileName);
 
-            log.info("📞 Call initiated: comPort={}, target={}, record={}",
-                    comPort, targetPhone, record);
+            log.info("📞 Call initiated: comPort={}, target={}, record={}, maxDuration={}s",
+                    comPort, targetPhone, record, maxDurationSeconds);
 
             return ResponseEntity.ok(response);
 
@@ -84,6 +87,50 @@ public class ModemCallController {
                             "success", false,
                             "error", e.getMessage()));
         }
+    }
+
+    /**
+     * Lấy trạng thái cuộc gọi real-time
+     */
+    @GetMapping("/call-status/{comPort}")
+    @Operation(summary = "Trạng thái cuộc gọi", description = "Lấy trạng thái real-time của cuộc gọi đang diễn ra")
+    public ResponseEntity<?> getCallStatus(@PathVariable String comPort) {
+        try {
+            ModemCallService.CallSession session = modemCallService.getCallStatus(comPort);
+
+            if (session == null) {
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "hasActiveCall", false,
+                        "message", "Không có cuộc gọi đang hoạt động"));
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "hasActiveCall", true,
+                    "comPort", session.getComPort(),
+                    "targetNumber", session.getTargetNumber(),
+                    "state", session.getState().name(),
+                    "stateDescription", getStateDescription(session.getState()),
+                    "durationSeconds", session.getDurationSeconds(),
+                    "maxDurationSeconds", session.getMaxDurationSeconds(),
+                    "startTime", session.getStartTime(),
+                    "connectTime", session.getConnectTime()));
+
+        } catch (Exception e) {
+            log.error("Error getting call status", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    private String getStateDescription(ModemCallService.CallState state) {
+        return switch (state) {
+            case DIALING -> "Đang gọi...";
+            case RINGING -> "Đang đổ chuông...";
+            case CONNECTED -> "Đã nhấc máy";
+            case ENDED -> "Đã kết thúc";
+        };
     }
 
     /**

@@ -6,6 +6,12 @@ spring:
         max-size: 50
         max-wait-time: 5000
 
+# Device/Machine identification (để phân biệt data giữa các máy)
+device:
+  id: ${DEVICE_ID:default-device}  # Set via environment variable
+  name: ${DEVICE_NAME:GSM-Node-01}
+  location: ${DEVICE_LOCATION:Unknown}
+
 # Disable JMS health check (ActiveMQ not used)
 management:
   health:
