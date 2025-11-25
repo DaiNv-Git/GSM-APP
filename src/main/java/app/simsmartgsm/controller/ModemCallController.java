@@ -113,6 +113,66 @@ public class ModemCallController {
     }
 
     /**
+     * Scan ports với progressive loading (SSE)
+     * Trả về từng port ngay khi scan xong
+     */
+    @GetMapping(value = "/scan-ports-stream", produces = "text/event-stream")
+    @Operation(summary = "Scan COM Ports (Progressive)", description = "Scan ports và stream kết quả real-time qua Server-Sent Events")
+    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter scanPortsProgressive() {
+        org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(
+                300000L); // 5 minutes timeout
+
+        // Chạy scan trong background thread
+        new Thread(() -> {
+            try {
+                log.info("🔍 Starting progressive port scan...");
+
+                // Gửi event bắt đầu scan
+                emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event()
+                        .name("scan-start")
+                        .data(Map.of("message", "Bắt đầu scan ports...")));
+
+                // Scan từng port và emit kết quả
+                List<PortScanService.PortInfo> allPorts = portScanService.scanAllPortsProgressive((portInfo) -> {
+                    try {
+                        // Emit port info ngay khi scan xong
+                        emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event()
+                                .name("port-found")
+                                .data(portInfo));
+
+                        log.info("📡 Streamed port: {}", portInfo.getComPort());
+                    } catch (Exception e) {
+                        log.error("Error sending SSE event", e);
+                    }
+                });
+
+                // Gửi event hoàn thành
+                emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event()
+                        .name("scan-complete")
+                        .data(Map.of(
+                                "message", "Scan hoàn tất",
+                                "totalPorts", allPorts.size())));
+
+                emitter.complete();
+                log.info("✅ Progressive scan completed. Total ports: {}", allPorts.size());
+
+            } catch (Exception e) {
+                log.error("Error during progressive scan", e);
+                try {
+                    emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event()
+                            .name("scan-error")
+                            .data(Map.of("error", e.getMessage())));
+                } catch (Exception ex) {
+                    log.error("Error sending error event", ex);
+                }
+                emitter.completeWithError(e);
+            }
+        }).start();
+
+        return emitter;
+    }
+
+    /**
      * Gửi SMS qua modem
      */
     @PostMapping("/send-sms")

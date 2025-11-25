@@ -68,6 +68,42 @@ public class PortScanService {
     }
 
     /**
+     * Scan ports với progressive callback
+     * Gọi callback ngay khi scan xong từng port
+     */
+    public List<PortInfo> scanAllPortsProgressive(java.util.function.Consumer<PortInfo> onPortScanned) {
+        log.info("🔍 Bắt đầu progressive scan COM ports...");
+
+        SerialPort[] ports = SerialPort.getCommPorts();
+        List<PortInfo> portInfoList = new CopyOnWriteArrayList<>();
+
+        if (ports.length == 0) {
+            log.warn("Không tìm thấy COM port nào");
+            return portInfoList;
+        }
+
+        // Scan từng port tuần tự để emit theo thứ tự
+        for (SerialPort port : ports) {
+            try {
+                PortInfo info = scanSinglePort(port.getSystemPortName());
+                if (info != null) {
+                    portInfoList.add(info);
+
+                    // Gọi callback ngay khi scan xong
+                    if (onPortScanned != null) {
+                        onPortScanned.accept(info);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error scanning port: {}", port.getSystemPortName(), e);
+            }
+        }
+
+        log.info("✅ Progressive scan hoàn tất. Tìm thấy {} port", portInfoList.size());
+        return portInfoList;
+    }
+
+    /**
      * Scan một port và lấy thông tin SIM
      */
     private PortInfo scanSinglePort(String portName) {
@@ -127,17 +163,59 @@ public class PortScanService {
      */
     private String getPhoneNumber(SerialPort port) {
         try {
+            // Thử AT+CNUM trước
             String response = sendATCommand(port, "AT+CNUM");
+            log.debug("📞 AT+CNUM response: {}", response);
 
-            // Parse response: +CNUM: "","+84901234567",145
-            if (response != null && response.contains("+CNUM:")) {
-                String[] parts = response.split("\"");
-                if (parts.length >= 4) {
-                    return parts[3].replace("+84", "0"); // Convert +84 to 0
+            if (response != null && !response.isEmpty()) {
+                // Method 1: Parse standard format: +CNUM: "","<number>",<type>
+                if (response.contains("+CNUM:")) {
+                    String[] lines = response.split("\n");
+                    for (String line : lines) {
+                        if (line.contains("+CNUM:")) {
+                            log.debug("📞 Parsing line: {}", line);
+
+                            // Try to extract number between quotes
+                            String[] parts = line.split("\"");
+                            for (int i = 0; i < parts.length; i++) {
+                                String part = parts[i].trim();
+                                // Look for phone number (starts with + or digit)
+                                if (part.matches("^[+0-9][0-9]{8,}$")) {
+                                    String number = part.replace("+84", "0")
+                                            .replace("+81", "0")
+                                            .replace("+", "");
+                                    log.info("✅ Found phone number: {}", number);
+                                    return number;
+                                }
+                            }
+                        }
+                    }
                 }
             }
+
+            // Method 2: Thử AT+CPBR=1 (đọc phonebook entry đầu tiên - có thể chứa số của
+            // SIM)
+            response = sendATCommand(port, "AT+CPBR=1");
+            log.debug("📞 AT+CPBR=1 response: {}", response);
+
+            if (response != null && response.contains("+CPBR:")) {
+                String[] parts = response.split("\"");
+                for (String part : parts) {
+                    if (part.matches("^[+0-9][0-9]{8,}$")) {
+                        String number = part.replace("+84", "0")
+                                .replace("+81", "0")
+                                .replace("+", "");
+                        log.info("✅ Found phone number from CPBR: {}", number);
+                        return number;
+                    }
+                }
+            }
+
+            log.warn("⚠️ Could not extract phone number from responses");
+
         } catch (Exception e) {
-            log.debug("Không lấy được phone number từ {}", port.getSystemPortName());
+            log.error("❌ Error getting phone number from {}: {}",
+                    port.getSystemPortName(), e.getMessage());
         }
         return null;
     }
