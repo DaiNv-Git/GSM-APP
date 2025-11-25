@@ -69,10 +69,10 @@ public class PortScanService {
 
     /**
      * Scan ports với progressive callback
-     * Gọi callback ngay khi scan xong từng port
+     * Gọi callback ngay khi scan xong từng port (multi-threaded)
      */
     public List<PortInfo> scanAllPortsProgressive(java.util.function.Consumer<PortInfo> onPortScanned) {
-        log.info("🔍 Bắt đầu progressive scan COM ports...");
+        log.info("🔍 Bắt đầu progressive scan COM ports (multi-threaded)...");
 
         SerialPort[] ports = SerialPort.getCommPorts();
         List<PortInfo> portInfoList = new CopyOnWriteArrayList<>();
@@ -82,22 +82,41 @@ public class PortScanService {
             return portInfoList;
         }
 
-        // Scan từng port tuần tự để emit theo thứ tự
-        for (SerialPort port : ports) {
-            try {
-                PortInfo info = scanSinglePort(port.getSystemPortName());
-                if (info != null) {
-                    portInfoList.add(info);
+        // Sử dụng ThreadPool để scan nhiều port cùng lúc
+        ExecutorService executor = Executors.newFixedThreadPool(Math.min(ports.length, 10));
+        CountDownLatch latch = new CountDownLatch(ports.length);
 
-                    // Gọi callback ngay khi scan xong
-                    if (onPortScanned != null) {
-                        onPortScanned.accept(info);
+        for (SerialPort port : ports) {
+            executor.submit(() -> {
+                try {
+                    PortInfo info = scanSinglePort(port.getSystemPortName());
+                    if (info != null) {
+                        portInfoList.add(info);
+
+                        // Gọi callback ngay khi scan xong (thread-safe)
+                        if (onPortScanned != null) {
+                            synchronized (onPortScanned) {
+                                onPortScanned.accept(info);
+                            }
+                        }
                     }
+                } catch (Exception e) {
+                    log.error("Error scanning port: {}", port.getSystemPortName(), e);
+                } finally {
+                    latch.countDown();
                 }
-            } catch (Exception e) {
-                log.error("Error scanning port: {}", port.getSystemPortName(), e);
-            }
+            });
         }
+
+        // Đợi tất cả ports scan xong
+        try {
+            latch.await(60, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Progressive scan interrupted", e);
+        }
+
+        executor.shutdown();
 
         log.info("✅ Progressive scan hoàn tất. Tìm thấy {} port", portInfoList.size());
         return portInfoList;
