@@ -11,7 +11,7 @@ async function scanPorts() {
     const simCount = document.getElementById('simCount');
     
     // Reset state
-    simList.innerHTML = '<div style="text-align: center; padding: 2rem; color: #808080; font-size: 14px;">🔍 Scanning ports...</div>';
+    simList.innerHTML = '<tr class="empty-state"><td colspan="10" style="text-align: center; padding: 2rem; color: #808080; font-size: 14px;">🔍 Scanning ports...</td></tr>';
     statusText.textContent = 'Scanning...';
     
     scannedSims = [];
@@ -23,7 +23,7 @@ async function scanPorts() {
 
         eventSource.addEventListener('scan-start', (e) => {
             const data = JSON.parse(e.data);
-            simList.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: #0066cc; font-size: 14px;">⏳ ' + data.message + '</div>';
+            simList.innerHTML = '<tr class="empty-state"><td colspan="10" style="text-align: center; padding: 1.5rem; color: #0066cc; font-size: 14px;">⏳ ' + data.message + '</td></tr>';
         });
 
         eventSource.addEventListener('port-found', (e) => {
@@ -36,7 +36,7 @@ async function scanPorts() {
             simCount.textContent = `SIMs: ${scannedCount}`;
             
             // Render progressively
-            renderSimsGrouped(scannedSims);
+            renderSimsTable(scannedSims);
         });
 
         eventSource.addEventListener('scan-complete', (e) => {
@@ -47,7 +47,7 @@ async function scanPorts() {
             simCount.textContent = `SIMs: ${data.totalPorts}`;
             
             if (data.totalPorts === 0) {
-                simList.innerHTML = '<div style="text-align: center; padding: 3rem; color: #808080; font-size: 14px;">❌ No SIM cards found</div>';
+                simList.innerHTML = '<tr class="empty-state"><td colspan="10" style="text-align: center; padding: 3rem; color: #808080; font-size: 14px;">❌ No SIM cards found</td></tr>';
             }
             
             eventSource.close();
@@ -56,7 +56,7 @@ async function scanPorts() {
         eventSource.addEventListener('scan-error', (e) => {
             const data = JSON.parse(e.data);
             statusText.textContent = '❌ Error: ' + data.error;
-            simList.innerHTML = '<div style="text-align: center; padding: 2rem; color: red; font-size: 14px;">Error scanning ports</div>';
+            simList.innerHTML = '<tr class="empty-state"><td colspan="10" style="text-align: center; padding: 2rem; color: red; font-size: 14px;">Error scanning ports</td></tr>';
             eventSource.close();
         });
 
@@ -69,86 +69,59 @@ async function scanPorts() {
     } catch (error) {
         console.error('Scan error:', error);
         statusText.textContent = 'Error scanning';
-        simList.innerHTML = '<div style="text-align: center; padding: 2rem; color: red; font-size: 14px;">Error</div>';
+        simList.innerHTML = '<tr class="empty-state"><td colspan="10" style="text-align: center; padding: 2rem; color: red; font-size: 14px;">Error</td></tr>';
     }
 }
 
 /**
- * Render SIMs grouped by carrier
+ * Render SIMs as table rows
  */
-function renderSimsGrouped(sims) {
-    // Group by carrier
-    const grouped = {};
-    sims.forEach(sim => {
-        const carrier = sim.carrier || 'Unknown';
-        if (!grouped[carrier]) {
-            grouped[carrier] = [];
-        }
-        grouped[carrier].push(sim);
-    });
+function renderSimsTable(sims) {
+    if (!sims || sims.length === 0) {
+        document.getElementById('simList').innerHTML = '<tr class="empty-state"><td colspan="10" style="text-align: center; padding: 3rem; color: #808080; font-size: 14px;">No SIMs found</td></tr>';
+        return;
+    }
 
-    // Sort carriers (prioritize Japanese carriers)
-    const carrierPriority = ['DOCOMO', 'AU', 'SOFTBANK', 'RAKUTEN', 'YMOBILE', 'VIETTEL', 'VINAPHONE', 'MOBIFONE'];
-    const sortedCarriers = Object.keys(grouped).sort((a, b) => {
-        const aIndex = carrierPriority.findIndex(c => a.toUpperCase().includes(c));
-        const bIndex = carrierPriority.findIndex(c => b.toUpperCase().includes(c));
-        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
-        if (aIndex !== -1) return -1;
-        if (bIndex !== -1) return 1;
-        return a.localeCompare(b);
-    });
-
-    // Render
-    const html = sortedCarriers.map(carrier => {
-        const carrierSims = grouped[carrier];
-        const carrierIcon = getCarrierIcon(carrier);
-        const simCards = carrierSims.map((sim, idx) => {
-            const globalIndex = sims.indexOf(sim);
-            const carrierClass = getCarrierClass(sim.carrier);
-            const signalQuality = parseSignalStrength(sim.signalStrength);
-            const signalClass = getSignalClass(signalQuality);
-            
-            return `
-                <div class="sim-card ${carrierClass}" onclick="document.getElementById('sim_${globalIndex}').click()">
-                    <input type="checkbox" id="sim_${globalIndex}" onchange="selectSim('${sim.comPort}', this)" onclick="event.stopPropagation()">
-                    <div class="sim-card-content">
-                        <div class="sim-card-header">
-                            <span>💳 ${sim.comPort}</span>
-                        </div>
-                        <div class="sim-card-info">
-                            <div class="sim-info-row">
-                                <span class="sim-info-label">📞 Phone:</span>
-                                <span class="sim-info-value">${sim.phoneNumber || 'N/A'}</span>
-                            </div>
-                            <div class="sim-info-row">
-                                <span class="sim-info-label">📡 Carrier:</span>
-                                <span class="sim-info-value">${carrierIcon} ${sim.carrier || 'N/A'}</span>
-                            </div>
-                            <div class="sim-info-row">
-                                <span class="sim-info-label">📶 Signal:</span>
-                                <span class="signal-indicator ${signalClass}">${signalQuality || 'N/A'}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
+    const html = sims.map((sim, index) => {
+        const carrierClass = getCarrierClass(sim.carrier);
+        const carrierIcon = getCarrierIcon(sim.carrier);
+        const signalQuality = parseSignalStrength(sim.signalStrength);
+        const signalClass = getSignalClass(signalQuality);
+        
+        // Extract signal strength in dB format
+        const signalDb = extractSignalDb(sim.signalStrength);
+        const dbClass = getDbClass(signalDb);
+        
+        // Get current timestamp
+        const currentTime = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        // Model name (extract from sim data or use default)
+        const model = sim.model || 'Quectel EC25';
+        
         return `
-            <div class="carrier-group">
-                <div class="carrier-header">
-                    <span class="carrier-name">
-                        <span class="carrier-icon">${carrierIcon}</span>
-                        ${carrier}
-                    </span>
-                    <span class="carrier-count">${carrierSims.length} SIM(s)</span>
-                </div>
-                ${simCards}
-            </div>
+            <tr class="${carrierClass ? 'row-' + carrierClass.replace('carrier-', '') : ''}" onclick="toggleRowSelection(this, ${index})">
+                <td>
+                    <input type="checkbox" id="sim_${index}" onchange="selectSim('${sim.comPort}', this)" onclick="event.stopPropagation()">
+                </td>
+                <td>${model}</td>
+                <td>
+                    <div class="operator-cell">
+                        <span class="operator-icon">${carrierIcon}</span>
+                        <span>${sim.carrier || 'N/A'}</span>
+                    </div>
+                </td>
+                <td>${sim.phoneNumber || 'N/A'}</td>
+                <td><strong>${sim.comPort}</strong></td>
+                <td><span class="signal-db ${dbClass}">${signalDb}</span></td>
+                <td><span class="status-badge status-on">on</span></td>
+                <td>${currentTime}</td>
+                <td>${signalQuality || 'N/A'}</td>
+                <td><span class="status-badge status-idle">Port is do...</span></td>
+            </tr>
         `;
     }).join('');
 
-    document.getElementById('simList').innerHTML = html || '<div style="text-align: center; padding: 3rem; color: #808080; font-size: 14px;">No SIMs found</div>';
+    document.getElementById('simList').innerHTML = html;
 }
 
 // Auto-scan on page load
@@ -156,3 +129,65 @@ setTimeout(() => {
     console.log('🔍 Auto-scanning ports on startup...');
     scanPorts();
 }, 1000);
+
+/**
+ * Extract signal strength in dB format
+ */
+function extractSignalDb(signalStr) {
+    if (!signalStr || signalStr === 'N/A') return 'N/A';
+    
+    // Try to extract dB value from signal strength string
+    // Example formats: "+CSQ: 25,99" or "(-73 dBm)"
+    const dbMatch = signalStr.match(/-?\d+\s*dB/i);
+    if (dbMatch) return dbMatch[0];
+    
+    // Try to extract CSQ value and convert to approximate dB
+    const csqMatch = signalStr.match(/\+CSQ:\s*(\d+)/);
+    if (csqMatch) {
+        const csq = parseInt(csqMatch[1]);
+        if (csq === 99) return 'N/A';
+        // Convert CSQ to approximate dBm: -113 + (csq * 2)
+        const dbm = -113 + (csq * 2);
+        return `${dbm} dB`;
+    }
+    
+    return 'N/A';
+}
+
+/**
+ * Get CSS class for signal dB value
+ */
+function getDbClass(dbStr) {
+    if (dbStr === 'N/A') return 'poor';
+    
+    const dbValue = parseInt(dbStr);
+    if (isNaN(dbValue)) return 'poor';
+    
+    // Signal quality thresholds (dBm)
+    if (dbValue >= -70) return 'excellent';
+    if (dbValue >= -85) return 'good';
+    if (dbValue >= -100) return 'fair';
+    return 'poor';
+}
+
+/**
+ * Toggle row selection
+ */
+function toggleRowSelection(row, index) {
+    const checkbox = document.getElementById(`sim_${index}`);
+    if (checkbox) {
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change'));
+    }
+}
+
+/**
+ * Toggle select all checkboxes
+ */
+function toggleSelectAll(selectAllCheckbox) {
+    const checkboxes = document.querySelectorAll('#simList input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        cb.checked = selectAllCheckbox.checked;
+        cb.dispatchEvent(new Event('change'));
+    });
+}

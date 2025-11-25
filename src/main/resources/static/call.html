@@ -1,65 +1,115 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GSM Manager - Call</title>
     <link rel="stylesheet" href="css/common.css">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 </head>
 
 <body>
     <div class="main-container">
-        <!-- Make Call Panel -->
-        <div class="panel">
-            <div class="panel-header">📞 Make Call</div>
-
-            <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.75rem; align-items: center;">
-                <input type="hidden" id="callComPort">
-
-                <label>Target Phone:</label>
-                <input type="text" id="callTargetPhone" placeholder="0987654321" style="font-size: 13px;">
-
-                <label>Max Duration (sec):</label>
-                <input type="number" id="maxDuration" value="30" min="0" style="font-size: 13px;">
-
-                <label></label>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <input type="checkbox" id="recordCall" style="width: 16px; height: 16px;">
-                    <label for="recordCall" style="margin: 0;">Enable Recording</label>
-                </div>
+        <!-- Call Panel -->
+        <div class="panel" style="flex: 1; display: flex; flex-direction: column;">
+            <div class="panel-header">
+                📞 Gọi Điện
             </div>
 
-            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
-                <button class="classic-button" onclick="makeCall()">📞 Make Call</button>
-                <button class="classic-button" onclick="clearCallForm()">🗑️ Clear</button>
+            <!-- Call Form -->
+            <div style="padding: 1rem;">
+                <div style="margin-bottom: 1rem;">
+                    <label>COM Port:</label>
+                    <select id="comPort" style="width: 100%; margin-top: 0.5rem;">
+                        <option value="">-- Chọn COM Port --</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label>Số điện thoại:</label>
+                    <input type="text" id="phoneNumber" placeholder="0123456789"
+                        style="width: 100%; margin-top: 0.5rem;">
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label>
+                        <input type="checkbox" id="enableRecording" checked>
+                        Ghi âm cuộc gọi
+                    </label>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label>Thời gian tối đa (giây):</label>
+                    <input type="number" id="maxDuration" value="30" min="5" max="300"
+                        style="width: 100%; margin-top: 0.5rem;">
+                </div>
+
+                <button class="classic-button" onclick="makeCall()"
+                    style="width: 100%; padding: 0.8rem; font-size: 16px;">
+                    📞 Gọi Điện
+                </button>
+            </div>
+
+            <!-- Call Status -->
+            <div id="callStatus" style="padding: 1rem; display: none;">
+                <div class="panel-header" style="margin-bottom: 0.5rem;">
+                    📊 Trạng Thái Cuộc Gọi
+                </div>
+                <div style="background: white; padding: 1rem; border: 2px inset #6b9bc4;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Trạng thái:</strong> <span id="callState" class="status-badge">IDLE</span>
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Ghi âm:</strong> <span id="recordingState" class="status-badge">IDLE</span>
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Số gọi:</strong> <span id="targetNumber">-</span>
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Thời gian:</strong> <span id="duration">0s</span>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <button class="classic-button" onclick="endCall()" style="width: 100%; background: #ff6666;">
+                            📴 Kết Thúc Cuộc Gọi
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Call History -->
-        <div class="panel" style="flex: 1; display: flex; flex-direction: column;">
-            <div class="panel-header">📋 Call History</div>
+        <!-- Call History Panel -->
+        <div class="panel" style="flex: 2; display: flex; flex-direction: column;">
+            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>📋 Lịch Sử Cuộc Gọi</span>
+                <button class="classic-button" onclick="loadCallHistory()" style="padding: 0.4rem 1rem;">
+                    🔄 Refresh
+                </button>
+            </div>
 
-            <div class="data-grid" style="flex: 1;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 140px;">Time</th>
-                            <th style="width: 120px;">SIM Phone</th>
-                            <th style="width: 120px;">Target</th>
-                            <th style="width: 100px;">COM Port</th>
-                            <th style="width: 90px;">Status</th>
-                            <th style="width: 70px;">Record</th>
-                            <th style="width: 80px;">Duration</th>
-                        </tr>
-                    </thead>
-                    <tbody id="callDataGrid">
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 1.5rem; font-size: 13px;">Loading...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div style="flex: 1; overflow-y: auto;">
+                <div class="data-grid" style="max-height: none; height: 100%;">
+                    <table class="sim-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 120px;">Thời gian</th>
+                                <th style="width: 100px;">COM Port</th>
+                                <th style="width: 120px;">Số điện thoại</th>
+                                <th style="width: 80px;">Thời lượng</th>
+                                <th style="width: 100px;">Trạng thái</th>
+                                <th style="width: 150px;">File ghi âm</th>
+                            </tr>
+                        </thead>
+                        <tbody id="callHistoryList">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 3rem; color: #808080;">
+                                    Chưa có lịch sử cuộc gọi
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
