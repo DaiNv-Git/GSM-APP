@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GSM Manager - Settings</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Appearance Settings -->
+        <div class="panel">
+            <div class="panel-header">🎨 Appearance</div>
+
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center;">
+                <label>Theme:</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="classic-button" onclick="switchTheme('light')" id="btnLight">☀️ Light</button>
+                    <button class="classic-button" onclick="switchTheme('dark')" id="btnDark">🌙 Dark</button>
+                </div>
+
+                <label>Language:</label>
+                <select id="languageSelect" onchange="changeLanguage()" style="font-size: 13px; padding: 0.4rem;">
+                    <option value="en">🇬🇧 English</option>
+                    <option value="vi">🇻🇳 Tiếng Việt</option>
+                    <option value="zh">🇨🇳 中文</option>
+                    <option value="ja">🇯🇵 日本語</option>
+                </select>
+
+                <label>Window Size:</label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="number" id="windowWidth" value="1200" min="800" style="width: 100px; font-size: 13px;">
+                    <span>×</span>
+                    <input type="number" id="windowHeight" value="800" min="600" style="width: 100px; font-size: 13px;">
+                    <button class="classic-button" onclick="applyWindowSize()">Apply</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scan Settings -->
+        <div class="panel">
+            <div class="panel-header">🔍 Scan Settings</div>
+
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center;">
+                <label>Auto-scan on startup:</label>
+                <input type="checkbox" id="autoScan" checked style="width: 16px; height: 16px;">
+
+                <label>Scan timeout (seconds):</label>
+                <input type="number" id="scanTimeout" value="10" min="5" max="60"
+                    style="width: 100px; font-size: 13px;">
+
+                <label>Carrier Priority:</label>
+                <select id="carrierPriority" style="font-size: 13px; padding: 0.4rem;">
+                    <option value="jp">Japanese Carriers First</option>
+                    <option value="vn">Vietnamese Carriers First</option>
+                    <option value="alphabetical">Alphabetical</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Recording Settings -->
+        <div class="panel">
+            <div class="panel-header">🎙️ Recording Settings</div>
+
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center;">
+                <label>Save Path:</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="recordingPath" value="/recordings" style="flex: 1; font-size: 13px;">
+                    <button class="classic-button" onclick="updateRecordingPath()">Update</button>
+                </div>
+
+                <label>Auto-record calls:</label>
+                <input type="checkbox" id="autoRecord" style="width: 16px; height: 16px;">
+            </div>
+        </div>
+
+        <!-- About -->
+        <div class="panel">
+            <div class="panel-header">ℹ️ About</div>
+
+            <div style="font-size: 13px; line-height: 1.8;">
+                <p><strong>GSM Manager</strong> v1.0</p>
+                <p>Multi-SIM management application for GSM modems</p>
+                <p>Supports: Japanese carriers (Docomo, AU, SoftBank, Rakuten) and Vietnamese carriers</p>
+                <p style="margin-top: 1rem;">
+                    <button class="classic-button" onclick="saveAllSettings()">💾 Save All Settings</button>
+                    <button class="classic-button" onclick="resetSettings()">🔄 Reset to Defaults</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/settings.js"></script>
+</body>
+
+</html>

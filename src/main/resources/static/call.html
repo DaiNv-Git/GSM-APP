@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GSM Manager - Call</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Make Call Panel -->
+        <div class="panel">
+            <div class="panel-header">📞 Make Call</div>
+
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.75rem; align-items: center;">
+                <input type="hidden" id="callComPort">
+
+                <label>Target Phone:</label>
+                <input type="text" id="callTargetPhone" placeholder="0987654321" style="font-size: 13px;">
+
+                <label>Max Duration (sec):</label>
+                <input type="number" id="maxDuration" value="30" min="0" style="font-size: 13px;">
+
+                <label></label>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="recordCall" style="width: 16px; height: 16px;">
+                    <label for="recordCall" style="margin: 0;">Enable Recording</label>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                <button class="classic-button" onclick="makeCall()">📞 Make Call</button>
+                <button class="classic-button" onclick="clearCallForm()">🗑️ Clear</button>
+            </div>
+        </div>
+
+        <!-- Call History -->
+        <div class="panel" style="flex: 1; display: flex; flex-direction: column;">
+            <div class="panel-header">📋 Call History</div>
+
+            <div class="data-grid" style="flex: 1;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">Time</th>
+                            <th style="width: 120px;">SIM Phone</th>
+                            <th style="width: 120px;">Target</th>
+                            <th style="width: 100px;">COM Port</th>
+                            <th style="width: 90px;">Status</th>
+                            <th style="width: 70px;">Record</th>
+                            <th style="width: 80px;">Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="callDataGrid">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 1.5rem; font-size: 13px;">Loading...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/call.js"></script>
+</body>
+
+</html>

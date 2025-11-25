@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GSM Manager - SMS</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Send SMS Panel -->
+        <div class="panel">
+            <div class="panel-header">📨 Send SMS</div>
+
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.75rem; align-items: center;">
+                <input type="hidden" id="smsComPort">
+
+                <label>Target Phone:</label>
+                <input type="text" id="smsTargetPhone" placeholder="0987654321" style="font-size: 13px;">
+
+                <label>Message:</label>
+                <textarea id="smsMessage" rows="3" placeholder="Type your message..."
+                    style="font-size: 13px;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                <button class="classic-button" onclick="sendSms()">📤 Send SMS</button>
+                <button class="classic-button" onclick="clearSmsForm()">🗑️ Clear</button>
+            </div>
+        </div>
+
+        <!-- SMS History -->
+        <div class="panel" style="flex: 1; display: flex; flex-direction: column;">
+            <div class="panel-header">📋 SMS History</div>
+
+            <div class="data-grid" style="flex: 1;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">Time</th>
+                            <th style="width: 120px;">Phone</th>
+                            <th style="width: 100px;">COM Port</th>
+                            <th>Message</th>
+                            <th style="width: 90px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="smsDataGrid">
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 2rem; font-size: 13px;">No SMS records
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/sms.js"></script>
+</body>
+
+</html>

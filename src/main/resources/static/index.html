@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GSM Manager - Scan</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- SIM List Panel -->
+        <div class="panel" style="flex: 1; display: flex; flex-direction: column;">
+            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>📱 Available SIM Cards</span>
+                <button class="classic-button" onclick="scanPorts()" style="padding: 0.4rem 1rem;">
+                    🔍 Scan Ports
+                </button>
+            </div>
+
+            <div id="simList" style="flex: 1; overflow-y: auto; padding: 0.75rem;">
+                <div style="text-align: center; padding: 3rem; color: #808080; font-size: 14px;">
+                    🔍 Auto-scanning for SIM cards...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/scan.js"></script>
+</body>
+
+</html>

@@ -296,40 +296,81 @@
         }
 
         .carrier-group {
-            margin-bottom: 1rem;
+            margin-bottom: 1.2rem;
         }
 
         .carrier-header {
-            background: #c3d9e8;
-            padding: 0.4rem 0.5rem;
+            background: linear-gradient(to bottom, #d8e9f7 0%, #c3d9e8 100%);
+            padding: 0.6rem 0.75rem;
             font-weight: bold;
-            border: 1px solid #6b9bc4;
-            margin-bottom: 0.5rem;
+            border: 2px outset #fff;
+            margin-bottom: 0.6rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .carrier-name {
             color: #0066cc;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .carrier-icon {
+            font-size: 14px;
         }
 
         .carrier-count {
             background: #fff;
-            padding: 0.1rem 0.4rem;
+            padding: 0.2rem 0.5rem;
             border: 1px solid #6b9bc4;
             font-size: 9px;
+            border-radius: 2px;
+            font-weight: bold;
         }
 
         .sim-card {
-            padding: 0.5rem;
-            background: #e8f3f9;
+            padding: 0.7rem;
+            background: linear-gradient(to bottom, #f5fbff 0%, #e8f3f9 100%);
             border: 2px outset #fff;
+            border-left: 4px solid #6b9bc4;
             font-size: 10px;
             display: flex;
-            gap: 0.5rem;
-            margin-bottom: 0.3rem;
+            gap: 0.6rem;
+            margin-bottom: 0.4rem;
             animation: fadeIn 0.3s ease-in;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .sim-card:hover {
+            background: linear-gradient(to bottom, #fff 0%, #f0f8ff 100%);
+            border-left-width: 5px;
+            transform: translateX(2px);
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .sim-card.carrier-viettel {
+            border-left-color: #e60012;
+        }
+
+        .sim-card.carrier-vinaphone {
+            border-left-color: #0066cc;
+        }
+
+        .sim-card.carrier-mobifone {
+            border-left-color: #0099ff;
+        }
+
+        .sim-card.carrier-vietnamobile {
+            border-left-color: #ffcc00;
+        }
+
+        .sim-card.carrier-gmobile {
+            border-left-color: #00cc66;
         }
 
         @keyframes fadeIn {
@@ -337,6 +378,7 @@
                 opacity: 0;
                 transform: translateY(-5px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -349,16 +391,21 @@
         }
 
         @keyframes pulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 opacity: 1;
             }
+
             50% {
                 opacity: 0.5;
             }
         }
 
         .sim-card input[type="checkbox"] {
-            margin-top: 0.2rem;
+            margin-top: 0.3rem;
+            width: 14px;
+            height: 14px;
         }
 
         .sim-card-content {
@@ -367,12 +414,64 @@
 
         .sim-card-header {
             font-weight: bold;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.35rem;
             color: #0066cc;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
         }
 
         .sim-card-info {
-            line-height: 1.4;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .sim-info-row {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .sim-info-label {
+            font-weight: bold;
+            color: #666;
+            min-width: 60px;
+        }
+
+        .sim-info-value {
+            color: #000;
+        }
+
+        .signal-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.1rem 0.3rem;
+            border-radius: 2px;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .signal-excellent {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .signal-good {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .signal-fair {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .signal-poor {
+            background: #f8d7da;
+            color: #721c24;
         }
 
         .skeleton-text {
@@ -638,11 +737,11 @@
             const simList = document.getElementById('simList');
             const statusText = document.getElementById('statusText');
             const simCount = document.getElementById('simCount');
-            
+
             // Reset state
             simList.innerHTML = '<div style="text-align: center; padding: 2rem; color: #808080;">🔍 Đang quét ports...</div>';
             statusText.textContent = 'Scanning...';
-            
+
             const scannedSims = [];
             let scannedCount = 0;
             const startTime = Date.now();
@@ -659,11 +758,11 @@
                     const portInfo = JSON.parse(e.data);
                     scannedSims.push(portInfo);
                     scannedCount++;
-                    
+
                     // Update status
                     statusText.textContent = `Scanning... Found ${scannedCount} SIM(s)`;
                     simCount.textContent = `SIMs: ${scannedCount}`;
-                    
+
                     // Render progressively
                     renderSimsGrouped(scannedSims);
                 });
@@ -671,14 +770,14 @@
                 eventSource.addEventListener('scan-complete', (e) => {
                     const data = JSON.parse(e.data);
                     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-                    
+
                     statusText.textContent = `✅ Scan complete: ${data.totalPorts} SIM(s) in ${elapsed}s`;
                     simCount.textContent = `SIMs: ${data.totalPorts}`;
-                    
+
                     if (data.totalPorts === 0) {
                         simList.innerHTML = '<div style="text-align: center; padding: 2rem; color: #808080;">❌ No SIM cards found</div>';
                     }
-                    
+
                     eventSource.close();
                 });
 
@@ -702,6 +801,45 @@
             }
         }
 
+        // Get carrier icon
+        function getCarrierIcon(carrier) {
+            const carrierLower = (carrier || '').toLowerCase();
+            if (carrierLower.includes('viettel')) return '🔴';
+            if (carrierLower.includes('vinaphone')) return '🔵';
+            if (carrierLower.includes('mobifone')) return '🟢';
+            if (carrierLower.includes('vietnamobile')) return '🟡';
+            if (carrierLower.includes('gmobile')) return '🟢';
+            return '📡';
+        }
+
+        // Get carrier CSS class
+        function getCarrierClass(carrier) {
+            const carrierLower = (carrier || '').toLowerCase();
+            if (carrierLower.includes('viettel')) return 'carrier-viettel';
+            if (carrierLower.includes('vinaphone')) return 'carrier-vinaphone';
+            if (carrierLower.includes('mobifone')) return 'carrier-mobifone';
+            if (carrierLower.includes('vietnamobile')) return 'carrier-vietnamobile';
+            if (carrierLower.includes('gmobile')) return 'carrier-gmobile';
+            return '';
+        }
+
+        // Parse signal strength
+        function parseSignalStrength(signalStr) {
+            if (!signalStr || signalStr === 'N/A') return null;
+            const match = signalStr.match(/\((.*?)\)/);
+            return match ? match[1] : null;
+        }
+
+        // Get signal class
+        function getSignalClass(quality) {
+            if (!quality) return 'signal-poor';
+            const q = quality.toLowerCase();
+            if (q.includes('excellent')) return 'signal-excellent';
+            if (q.includes('good')) return 'signal-good';
+            if (q.includes('fair')) return 'signal-fair';
+            return 'signal-poor';
+        }
+
         // Render SIMs grouped by carrier
         function renderSimsGrouped(sims) {
             // Group by carrier
@@ -714,23 +852,47 @@
                 grouped[carrier].push(sim);
             });
 
-            // Sort carriers
-            const sortedCarriers = Object.keys(grouped).sort();
+            // Sort carriers (prioritize Vietnamese carriers)
+            const carrierPriority = ['VIETTEL', 'VINAPHONE', 'MOBIFONE', 'VIETNAMOBILE', 'GMOBILE'];
+            const sortedCarriers = Object.keys(grouped).sort((a, b) => {
+                const aIndex = carrierPriority.findIndex(c => a.toUpperCase().includes(c));
+                const bIndex = carrierPriority.findIndex(c => b.toUpperCase().includes(c));
+                if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+                if (aIndex !== -1) return -1;
+                if (bIndex !== -1) return 1;
+                return a.localeCompare(b);
+            });
 
             // Render
             const html = sortedCarriers.map(carrier => {
                 const carrierSims = grouped[carrier];
+                const carrierIcon = getCarrierIcon(carrier);
                 const simCards = carrierSims.map((sim, idx) => {
                     const globalIndex = sims.indexOf(sim);
+                    const carrierClass = getCarrierClass(sim.carrier);
+                    const signalQuality = parseSignalStrength(sim.signalStrength);
+                    const signalClass = getSignalClass(signalQuality);
+
                     return `
-                        <div class="sim-card">
-                            <input type="checkbox" id="sim_${globalIndex}" onchange="selectSim('${sim.comPort}', this)">
+                        <div class="sim-card ${carrierClass}" onclick="document.getElementById('sim_${globalIndex}').click()">
+                            <input type="checkbox" id="sim_${globalIndex}" onchange="selectSim('${sim.comPort}', this)" onclick="event.stopPropagation()">
                             <div class="sim-card-content">
-                                <div class="sim-card-header">${sim.comPort}</div>
+                                <div class="sim-card-header">
+                                    <span>💳 ${sim.comPort}</span>
+                                </div>
                                 <div class="sim-card-info">
-                                    📞 ${sim.phoneNumber || 'N/A'}<br>
-                                    📡 ${sim.carrier || 'N/A'}<br>
-                                    📶 ${sim.signalStrength || 'N/A'}
+                                    <div class="sim-info-row">
+                                        <span class="sim-info-label">📞 Phone:</span>
+                                        <span class="sim-info-value">${sim.phoneNumber || 'N/A'}</span>
+                                    </div>
+                                    <div class="sim-info-row">
+                                        <span class="sim-info-label">📡 Carrier:</span>
+                                        <span class="sim-info-value">${carrierIcon} ${sim.carrier || 'N/A'}</span>
+                                    </div>
+                                    <div class="sim-info-row">
+                                        <span class="sim-info-label">📶 Signal:</span>
+                                        <span class="signal-indicator ${signalClass}">${signalQuality || 'N/A'}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -740,7 +902,10 @@
                 return `
                     <div class="carrier-group">
                         <div class="carrier-header">
-                            <span class="carrier-name">📡 ${carrier}</span>
+                            <span class="carrier-name">
+                                <span class="carrier-icon">${carrierIcon}</span>
+                                ${carrier}
+                            </span>
                             <span class="carrier-count">${carrierSims.length} SIM(s)</span>
                         </div>
                         ${simCards}
@@ -972,6 +1137,12 @@
 
         // Load on start
         loadCallHistory();
+
+        // Auto-scan ports on page load
+        setTimeout(() => {
+            console.log('🔍 Auto-scanning ports on startup...');
+            scanPorts();
+        }, 1000); // Wait 1 second for page to fully load
 
         // Confirm before close window
         window.addEventListener('beforeunload', function (e) {
