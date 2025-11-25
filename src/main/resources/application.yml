@@ -6,6 +6,12 @@ spring:
         max-size: 50
         max-wait-time: 5000
 
+# Disable JMS health check (ActiveMQ not used)
+management:
+  health:
+    jms:
+      enabled: false
+
 services:
   sim-smart-gsm:
     image: sim-smart-gsm:latest

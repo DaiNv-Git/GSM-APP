@@ -114,44 +114,74 @@ public class PortScanService {
         try {
             serialPort = SerialPort.getCommPort(portName);
             serialPort.setComPortParameters(115200, 8, 1, 0);
-            serialPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_BLOCKING, 2000, 0);
+            serialPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_BLOCKING, 3000, 0); // Tăng timeout
 
             if (!serialPort.openPort()) {
                 info.setAvailable(false);
                 info.setStatus("Không thể mở port");
+                log.debug("❌ Cannot open port: {}", portName);
                 return info;
             }
 
-            Thread.sleep(500); // Đợi port stable
+            // Đợi port stable lâu hơn
+            Thread.sleep(800);
+
+            // Test port với AT command đơn giản
+            try {
+                String testResponse = sendATCommand(serialPort, "AT");
+                if (testResponse == null || !testResponse.contains("OK")) {
+                    info.setAvailable(false);
+                    info.setStatus("Port không phản hồi AT command");
+                    log.debug("⚠️ Port {} không phản hồi AT", portName);
+                    return info;
+                }
+            } catch (Exception e) {
+                info.setAvailable(false);
+                info.setStatus("Lỗi kiểm tra AT: " + e.getMessage());
+                log.debug("❌ AT test failed for {}: {}", portName, e.getMessage());
+                return info;
+            }
 
             info.setAvailable(true);
             info.setStatus("Active");
 
             // Lấy số điện thoại SIM
             String phoneNumber = getPhoneNumber(serialPort);
-            info.setPhoneNumber(phoneNumber != null ? phoneNumber : "N/A");
+            info.setPhoneNumber(phoneNumber != null && !phoneNumber.isEmpty() ? phoneNumber : "N/A");
 
             // Lấy nhà mạng
             String carrier = getCarrier(serialPort);
-            info.setCarrier(carrier != null ? carrier : "N/A");
+            info.setCarrier(carrier != null && !carrier.isEmpty() ? carrier : "N/A");
 
             // Lấy IMEI
             String imei = getIMEI(serialPort);
-            info.setImei(imei != null ? imei : "N/A");
+            info.setImei(imei != null && !imei.isEmpty() ? imei : "N/A");
 
             // Lấy signal strength
             String signal = getSignalStrength(serialPort);
-            info.setSignalStrength(signal != null ? signal : "N/A");
+            info.setSignalStrength(signal != null && !signal.isEmpty() ? signal : "N/A");
 
-            log.info("📱 Port {}: Phone={}, Carrier={}", portName, phoneNumber, carrier);
+            log.info("📱 Port {}: Phone={}, Carrier={}, IMEI={}, Signal={}",
+                    portName, phoneNumber, carrier, imei, signal);
 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("❌ Interrupted while scanning port {}", portName);
+            info.setAvailable(false);
+            info.setStatus("Interrupted");
         } catch (Exception e) {
-            log.error("Error scanning port {}", portName, e);
+            log.error("❌ Error scanning port {}: {}", portName, e.getMessage());
             info.setAvailable(false);
             info.setStatus("Error: " + e.getMessage());
         } finally {
+            // Đảm bảo port được đóng
             if (serialPort != null && serialPort.isOpen()) {
-                serialPort.closePort();
+                try {
+                    serialPort.closePort();
+                    log.debug("✅ Closed port: {}", portName);
+                } catch (Exception e) {
+                    log.warn("⚠️ Error closing port {}: {}", portName, e.getMessage());
+                }
             }
         }
 
@@ -303,38 +333,81 @@ public class PortScanService {
     }
 
     /**
-     * Gửi AT command và đợi response
+     * Gửi AT command và đợi response với retry mechanism
      */
     private String sendATCommand(SerialPort port, String command) throws Exception {
-        // Clear input buffer
-        while (port.bytesAvailable() > 0) {
-            port.readBytes(new byte[port.bytesAvailable()], port.bytesAvailable());
-        }
+        return sendATCommandWithRetry(port, command, 3);
+    }
 
-        // Send command
-        byte[] cmdBytes = (command + "\r").getBytes();
-        port.writeBytes(cmdBytes, cmdBytes.length);
+    /**
+     * Gửi AT command với retry
+     */
+    private String sendATCommandWithRetry(SerialPort port, String command, int maxRetries) throws Exception {
+        Exception lastException = null;
 
-        // Wait and read response
-        Thread.sleep(500);
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                // Clear input buffer
+                while (port.bytesAvailable() > 0) {
+                    port.readBytes(new byte[port.bytesAvailable()], port.bytesAvailable());
+                }
 
-        StringBuilder response = new StringBuilder();
-        long timeout = System.currentTimeMillis() + 2000;
+                // Send command
+                byte[] cmdBytes = (command + "\r").getBytes();
+                int written = port.writeBytes(cmdBytes, cmdBytes.length);
 
-        while (System.currentTimeMillis() < timeout) {
-            if (port.bytesAvailable() > 0) {
-                byte[] buffer = new byte[port.bytesAvailable()];
-                port.readBytes(buffer, buffer.length);
-                response.append(new String(buffer));
+                if (written != cmdBytes.length) {
+                    throw new Exception("Failed to write complete command");
+                }
 
-                if (response.toString().contains("OK") || response.toString().contains("ERROR")) {
-                    break;
+                // Wait for modem to process
+                Thread.sleep(300);
+
+                // Read response with timeout
+                StringBuilder response = new StringBuilder();
+                long timeout = System.currentTimeMillis() + 3000; // Tăng timeout lên 3s
+                boolean gotResponse = false;
+
+                while (System.currentTimeMillis() < timeout) {
+                    if (port.bytesAvailable() > 0) {
+                        byte[] buffer = new byte[port.bytesAvailable()];
+                        int read = port.readBytes(buffer, buffer.length);
+                        if (read > 0) {
+                            response.append(new String(buffer, 0, read));
+                            gotResponse = true;
+                        }
+
+                        // Check for completion
+                        String resp = response.toString();
+                        if (resp.contains("OK") || resp.contains("ERROR")) {
+                            log.debug("✅ AT command '{}' succeeded on attempt {}", command, attempt);
+                            return resp;
+                        }
+                    }
+                    Thread.sleep(50);
+                }
+
+                // If we got some response but no OK/ERROR, return it anyway
+                if (gotResponse && response.length() > 0) {
+                    log.debug("⚠️ AT command '{}' got partial response on attempt {}", command, attempt);
+                    return response.toString();
+                }
+
+                throw new Exception("Timeout waiting for response");
+
+            } catch (Exception e) {
+                lastException = e;
+                log.warn("❌ AT command '{}' failed on attempt {}/{}: {}",
+                        command, attempt, maxRetries, e.getMessage());
+
+                if (attempt < maxRetries) {
+                    Thread.sleep(200); // Wait before retry
                 }
             }
-            Thread.sleep(50);
         }
 
-        return response.toString();
+        throw new Exception("AT command failed after " + maxRetries + " attempts: " +
+                (lastException != null ? lastException.getMessage() : "Unknown error"));
     }
 
     /**
