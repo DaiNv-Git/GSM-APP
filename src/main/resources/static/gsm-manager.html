@@ -21,7 +21,7 @@
             /* Xanh nhạt thay vì xám */
             height: 100vh;
             overflow: hidden;
-            font-size: 11px;
+            font-size: 9px;
         }
 
         /* Classic Menu */
@@ -30,7 +30,7 @@
             /* Xanh nhạt */
             border-bottom: 1px solid #fff;
             box-shadow: inset 0 -1px 0 #6b9bc4;
-            padding: 0.25rem 0;
+            padding: 0.15rem 0;
         }
 
         .menu-items {
@@ -39,9 +39,10 @@
         }
 
         .menu-item {
-            padding: 0.3rem 0.75rem;
+            padding: 0.2rem 0.5rem;
             cursor: pointer;
             border: 1px solid transparent;
+            font-size: 9px;
         }
 
         .menu-item:hover {
@@ -53,9 +54,9 @@
         .main-container {
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 50px);
-            padding: 0.5rem;
-            gap: 0.5rem;
+            height: calc(100vh - 40px);
+            padding: 0.3rem;
+            gap: 0.3rem;
         }
 
         /* Top Panel - Tabs & Content */
@@ -78,13 +79,14 @@
         }
 
         .tab-button {
-            padding: 0.4rem 1.5rem;
+            padding: 0.25rem 1rem;
             background: #c3d9e8;
             border: 1px solid #6b9bc4;
             border-bottom: none;
             cursor: pointer;
             font-weight: bold;
             border-radius: 3px 3px 0 0;
+            font-size: 9px;
         }
 
         .tab-button.active {
@@ -119,11 +121,12 @@
         }
 
         .sub-tab-button {
-            padding: 0.3rem 1rem;
+            padding: 0.2rem 0.7rem;
             background: #c3d9e8;
             border: 2px outset #fff;
             cursor: pointer;
             font-weight: bold;
+            font-size: 9px;
         }
 
         .sub-tab-button.active {
@@ -133,7 +136,7 @@
 
         /* Filter Panel */
         .filter-panel {
-            padding: 0.75rem;
+            padding: 0.4rem;
             background: #e8f3f9;
             border-bottom: 1px solid #6b9bc4;
         }
@@ -164,12 +167,13 @@
         }
 
         .classic-button {
-            padding: 0.4rem 1.2rem;
+            padding: 0.25rem 0.8rem;
             background: #c3d9e8;
             border: 2px outset #fff;
             cursor: pointer;
             font-weight: bold;
             font-family: inherit;
+            font-size: 9px;
         }
 
         .classic-button:active {
@@ -192,7 +196,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 11px;
+            font-size: 9px;
         }
 
         thead {
@@ -203,11 +207,12 @@
         }
 
         th {
-            padding: 0.4rem;
+            padding: 0.25rem;
             text-align: left;
             font-weight: bold;
             border-right: 1px solid #6b9bc4;
             background: #c3d9e8;
+            font-size: 9px;
         }
 
         tbody tr {
@@ -225,13 +230,14 @@
         }
 
         td {
-            padding: 0.4rem;
+            padding: 0.25rem;
             border-right: 1px solid #e0e0e0;
+            font-size: 9px;
         }
 
         /* Action Panel (Call/SMS Form) */
         .action-panel {
-            padding: 0.75rem;
+            padding: 0.4rem;
             background: #e8f3f9;
             border-bottom: 1px solid #6b9bc4;
         }
@@ -269,7 +275,7 @@
 
         /* Bottom Panel - SIM List */
         .bottom-panel {
-            height: 250px;
+            height: 180px;
             background: #e8f3f9;
             border: 2px outset #fff;
             display: flex;
@@ -277,13 +283,14 @@
         }
 
         .sim-panel-header {
-            padding: 0.5rem;
+            padding: 0.3rem;
             background: #c3d9e8;
             border-bottom: 1px solid #6b9bc4;
             font-weight: bold;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            font-size: 9px;
         }
 
         .sim-list {
@@ -999,7 +1006,8 @@
             try {
                 statusText.textContent = '📞 Dialing ' + targetPhone + '...';
 
-                const response = await fetch(`/api/modem-call/make-call?comPort=${comPort}&targetPhone=${targetPhone}&record=${record}`, {
+                // Use correct API endpoint: /api/call/start
+                const response = await fetch(`/api/call/start?comPort=${comPort}&phoneNumber=${targetPhone}&record=${record}&maxDurationSeconds=30`, {
                     method: 'POST'
                 });
                 const data = await response.json();
@@ -1007,7 +1015,7 @@
                 if (data.success) {
                     statusDisplay.style.background = '#d4edda';
                     statusDisplay.style.borderColor = '#28a745';
-                    statusText.textContent = '✅ Call initiated! OrderID: ' + data.orderId.substring(0, 8) + '...';
+                    statusText.textContent = '✅ Call started successfully!';
                     document.getElementById('statusText').textContent = 'Call in progress';
 
                     clearCallForm();
@@ -1020,7 +1028,7 @@
                 } else {
                     statusDisplay.style.background = '#f8d7da';
                     statusDisplay.style.borderColor = '#dc3545';
-                    statusText.textContent = '❌ Failed: ' + (data.error || 'Unknown error');
+                    statusText.textContent = '❌ Failed: ' + (data.message || 'Unknown error');
                     document.getElementById('statusText').textContent = 'Call failed';
                 }
             } catch (error) {
