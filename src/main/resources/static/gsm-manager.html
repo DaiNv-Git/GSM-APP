@@ -684,9 +684,14 @@
         <div class="bottom-panel">
             <div class="sim-panel-header">
                 <span>Available SIM Cards</span>
-                <button class="classic-button" onclick="scanPorts()" style="padding: 0.3rem 0.8rem;">
-                    Scan Ports
-                </button>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="classic-button" onclick="scanPorts()" style="padding: 0.3rem 0.8rem;">
+                        🔍 Scan Ports
+                    </button>
+                    <button class="classic-button" onclick="scanPorts()" style="padding: 0.3rem 0.8rem;">
+                        🔄 Reload
+                    </button>
+                </div>
             </div>
             <div class="sim-list" id="simList">
                 <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #808080;">
@@ -732,7 +737,7 @@
             loadSmsHistory();
         }
 
-        // Scan ports với SSE progressive loading
+        // Scan ports - Simple REST API version
         async function scanPorts() {
             const simList = document.getElementById('simList');
             const statusText = document.getElementById('statusText');
@@ -742,62 +747,32 @@
             simList.innerHTML = '<div style="text-align: center; padding: 2rem; color: #808080;">🔍 Đang quét ports...</div>';
             statusText.textContent = 'Scanning...';
 
-            const scannedSims = [];
-            let scannedCount = 0;
             const startTime = Date.now();
 
             try {
-                const eventSource = new EventSource('/api/modem-call/scan-ports-stream');
+                const response = await fetch('/api/modem-call/scan-ports');
+                const result = await response.json();
 
-                eventSource.addEventListener('scan-start', (e) => {
-                    const data = JSON.parse(e.data);
-                    simList.innerHTML = '<div style="text-align: center; padding: 1rem; color: #0066cc;">⏳ ' + data.message + '</div>';
-                });
-
-                eventSource.addEventListener('port-found', (e) => {
-                    const portInfo = JSON.parse(e.data);
-                    scannedSims.push(portInfo);
-                    scannedCount++;
-
-                    // Update status
-                    statusText.textContent = `Scanning... Found ${scannedCount} SIM(s)`;
-                    simCount.textContent = `SIMs: ${scannedCount}`;
-
-                    // Render progressively
-                    renderSimsGrouped(scannedSims);
-                });
-
-                eventSource.addEventListener('scan-complete', (e) => {
-                    const data = JSON.parse(e.data);
+                if (result.success && result.ports) {
+                    const scannedSims = result.ports;
                     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
-                    statusText.textContent = `✅ Scan complete: ${data.totalPorts} SIM(s) in ${elapsed}s`;
-                    simCount.textContent = `SIMs: ${data.totalPorts}`;
+                    statusText.textContent = `✅ Scan complete: ${scannedSims.length} SIM(s) in ${elapsed}s`;
+                    simCount.textContent = `SIMs: ${scannedSims.length}`;
 
-                    if (data.totalPorts === 0) {
+                    if (scannedSims.length === 0) {
                         simList.innerHTML = '<div style="text-align: center; padding: 2rem; color: #808080;">❌ No SIM cards found</div>';
+                    } else {
+                        renderSimsGrouped(scannedSims);
                     }
-
-                    eventSource.close();
-                });
-
-                eventSource.addEventListener('scan-error', (e) => {
-                    const data = JSON.parse(e.data);
-                    statusText.textContent = '❌ Error: ' + data.error;
+                } else {
+                    statusText.textContent = '❌ Error: ' + (result.message || 'Unknown error');
                     simList.innerHTML = '<div style="text-align: center; padding: 2rem; color: red;">Error scanning ports</div>';
-                    eventSource.close();
-                });
-
-                eventSource.onerror = (error) => {
-                    console.error('SSE Error:', error);
-                    statusText.textContent = 'Connection error';
-                    eventSource.close();
-                };
-
+                }
             } catch (error) {
                 console.error('Scan error:', error);
-                statusText.textContent = 'Error scanning';
-                simList.innerHTML = '<div style="text-align: center; padding: 2rem; color: red;">Error</div>';
+                statusText.textContent = '❌ Error scanning';
+                simList.innerHTML = '<div style="text-align: center; padding: 2rem; color: red;">Error: ' + error.message + '</div>';
             }
         }
 
