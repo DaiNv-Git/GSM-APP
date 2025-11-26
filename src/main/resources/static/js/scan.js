@@ -3,7 +3,7 @@
 let scannedSims = [];
 
 /**
- * Scan ports with SSE progressive loading
+ * Scan ports - Simple version using regular API
  */
 async function scanPorts() {
     const simList = document.getElementById('simList');
@@ -15,61 +15,32 @@ async function scanPorts() {
     statusText.textContent = 'Scanning...';
     
     scannedSims = [];
-    let scannedCount = 0;
     const startTime = Date.now();
 
     try {
-        const eventSource = new EventSource('/api/modem-call/scan-ports-stream');
-
-        eventSource.addEventListener('scan-start', (e) => {
-            const data = JSON.parse(e.data);
-            simList.innerHTML = '<tr class="empty-state"><td colspan="10" style="text-align: center; padding: 1.5rem; color: #0066cc; font-size: 14px;">⏳ ' + data.message + '</td></tr>';
-        });
-
-        eventSource.addEventListener('port-found', (e) => {
-            const portInfo = JSON.parse(e.data);
-            scannedSims.push(portInfo);
-            scannedCount++;
-            
-            // Update status
-            statusText.textContent = `Scanning... Found ${scannedCount} SIM(s)`;
-            simCount.textContent = `SIMs: ${scannedCount}`;
-            
-            // Render progressively
-            renderSimsTable(scannedSims);
-        });
-
-        eventSource.addEventListener('scan-complete', (e) => {
-            const data = JSON.parse(e.data);
+        const response = await fetch('/api/modem-call/scan-ports');
+        const result = await response.json();
+        
+        if (result.success && result.ports) {
+            scannedSims = result.ports;
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
             
-            statusText.textContent = `✅ Scan complete: ${data.totalPorts} SIM(s) in ${elapsed}s`;
-            simCount.textContent = `SIMs: ${data.totalPorts}`;
+            statusText.textContent = `✅ Scan complete: ${scannedSims.length} SIM(s) in ${elapsed}s`;
+            simCount.textContent = `SIMs: ${scannedSims.length}`;
             
-            if (data.totalPorts === 0) {
+            if (scannedSims.length === 0) {
                 simList.innerHTML = '<tr class="empty-state"><td colspan="10" style="text-align: center; padding: 3rem; color: #808080; font-size: 14px;">❌ No SIM cards found</td></tr>';
+            } else {
+                renderSimsTable(scannedSims);
             }
-            
-            eventSource.close();
-        });
-
-        eventSource.addEventListener('scan-error', (e) => {
-            const data = JSON.parse(e.data);
-            statusText.textContent = '❌ Error: ' + data.error;
+        } else {
+            statusText.textContent = '❌ Error: ' + (result.message || 'Unknown error');
             simList.innerHTML = '<tr class="empty-state"><td colspan="10" style="text-align: center; padding: 2rem; color: red; font-size: 14px;">Error scanning ports</td></tr>';
-            eventSource.close();
-        });
-
-        eventSource.onerror = (error) => {
-            console.error('SSE Error:', error);
-            statusText.textContent = 'Connection error';
-            eventSource.close();
-        };
-
+        }
     } catch (error) {
         console.error('Scan error:', error);
         statusText.textContent = 'Error scanning';
-        simList.innerHTML = '<tr class="empty-state"><td colspan="10" style="text-align: center; padding: 2rem; color: red; font-size: 14px;">Error</td></tr>';
+        simList.innerHTML = '<tr class="empty-state"><td colspan="10" style="text-align: center; padding: 2rem; color: red; font-size: 14px;">Error: ' + error.message + '</td></tr>';
     }
 }
 
@@ -116,7 +87,7 @@ function renderSimsTable(sims) {
                 <td><span class="status-badge status-on">on</span></td>
                 <td>${currentTime}</td>
                 <td>${signalQuality || 'N/A'}</td>
-                <td><span class="status-badge status-idle">Port is do...</span></td>
+                <td><span class="status-badge status-idle">${sim.status || 'Idle'}</span></td>
             </tr>
         `;
     }).join('');
