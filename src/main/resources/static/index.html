@@ -14,9 +14,14 @@
         <div class="panel" style="flex: 1; display: flex; flex-direction: column;">
             <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <span>📱 Available SIM Cards</span>
-                <button class="classic-button" onclick="scanPorts()" style="padding: 0.4rem 1rem;">
-                    🔍 Scan Ports
-                </button>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="scanBtn" class="classic-button" onclick="scanPorts()" style="padding: 0.4rem 1rem;">
+                        🔍 Scan Ports
+                    </button>
+                    <button id="reloadBtn" class="classic-button" onclick="reloadScan()" style="padding: 0.4rem 1rem;">
+                        🔄 Reload
+                    </button>
+                </div>
             </div>
 
             <div style="flex: 1; overflow-y: auto;">

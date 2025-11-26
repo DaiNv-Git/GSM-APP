@@ -1,14 +1,54 @@
 // Scan Page Logic
 
 let scannedSims = [];
+let isScanning = false;
+
+/**
+ * Reload scan - wrapper for scanPorts with animation
+ */
+async function reloadScan() {
+    console.log('🔄 Reloading scan...');
+    await scanPorts();
+}
+
+/**
+ * Set scanning state
+ */
+function setScanningState(scanning) {
+    isScanning = scanning;
+    const scanBtn = document.getElementById('scanBtn');
+    const reloadBtn = document.getElementById('reloadBtn');
+    
+    if (scanBtn) {
+        scanBtn.disabled = scanning;
+        scanBtn.style.opacity = scanning ? '0.6' : '1';
+        scanBtn.style.cursor = scanning ? 'not-allowed' : 'pointer';
+        scanBtn.innerHTML = scanning ? '⏳ Scanning...' : '🔍 Scan Ports';
+    }
+    
+    if (reloadBtn) {
+        reloadBtn.disabled = scanning;
+        reloadBtn.style.opacity = scanning ? '0.6' : '1';
+        reloadBtn.style.cursor = scanning ? 'not-allowed' : 'pointer';
+        reloadBtn.innerHTML = scanning ? '⏳ Loading...' : '🔄 Reload';
+    }
+}
 
 /**
  * Scan ports - Simple version using regular API
  */
 async function scanPorts() {
+    if (isScanning) {
+        console.log('⚠️ Scan already in progress');
+        return;
+    }
+    
     const simList = document.getElementById('simList');
     const statusText = document.getElementById('statusText');
     const simCount = document.getElementById('simCount');
+    
+    // Set scanning state
+    setScanningState(true);
     
     // Reset state
     simList.innerHTML = '<tr class="empty-state"><td colspan="10" style="text-align: center; padding: 2rem; color: #808080; font-size: 14px;">🔍 Scanning ports...</td></tr>';
@@ -39,8 +79,11 @@ async function scanPorts() {
         }
     } catch (error) {
         console.error('Scan error:', error);
-        statusText.textContent = 'Error scanning';
+        statusText.textContent = '❌ Error scanning';
         simList.innerHTML = '<tr class="empty-state"><td colspan="10" style="text-align: center; padding: 2rem; color: red; font-size: 14px;">Error: ' + error.message + '</td></tr>';
+    } finally {
+        // Reset scanning state
+        setScanningState(false);
     }
 }
 
