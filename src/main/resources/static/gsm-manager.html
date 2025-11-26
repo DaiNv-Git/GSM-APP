@@ -1050,33 +1050,40 @@
             }, 500);
         }
 
-        // Load Call History
+        // Load Call History from MongoDB
         async function loadCallHistory() {
             const grid = document.getElementById('callDataGrid');
             grid.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 1rem;">Loading...</td></tr>';
 
             try {
-                const response = await fetch('/api/modem-call/call-history?page=1&size=100');
+                // Use MongoDB API to get call records
+                const response = await fetch('/api/call-records/recent?limit=50');
+
+                if (!response.ok) {
+                    throw new Error('Failed to load call history');
+                }
+
                 const data = await response.json();
 
-                if (data.success && data.calls && data.calls.length > 0) {
-                    grid.innerHTML = data.calls.map(call => `
+                if (data && Array.isArray(data) && data.length > 0) {
+                    grid.innerHTML = data.map(call => `
                         <tr>
-                            <td>${formatTime(call.createdAt)}</td>
+                            <td>${formatTime(call.startTime)}</td>
                             <td>${call.simPhone || '-'}</td>
-                            <td>${call.fromNumber || '-'}</td>
+                            <td>${call.targetNumber || '-'}</td>
                             <td>${call.comPort || '-'}</td>
                             <td>${call.deviceName || '-'}</td>
-                            <td>${call.status || '-'}</td>
-                            <td>${call.recordFile ? 'Yes' : 'No'}</td>
-                            <td>${calculateDuration(call.callStartTime, call.callEndTime)}</td>
+                            <td>${call.callState || '-'}</td>
+                            <td>${call.recordingFileName ? '✅' : '❌'}</td>
+                            <td>${call.durationSeconds || 0}s</td>
                         </tr>
                     `).join('');
                 } else {
                     grid.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #808080;">No call records</td></tr>';
                 }
             } catch (error) {
-                grid.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: red;">Error loading data</td></tr>';
+                console.error('Error loading call history:', error);
+                grid.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: red;">Error loading data: ' + error.message + '</td></tr>';
             }
         }
 
